@@ -1,0 +1,13 @@
+{
+  "name": "medicare-connect",
+  "version": "1.0.0",
+  "description": "Modern Healthcare Appointment Booking Platform with Google Authentication",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node.bat server/server.js",
+    "test": "node.bat test-server.js"
+  },
+  "keywords": ["healthcare", "appointment-booking", "google-oauth", "sqlite", "nodejs"],
+  "author": "MediCare Connect Team",
+  "license": "MIT"
+}
