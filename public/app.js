@@ -357,14 +357,7 @@
     if (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey && window.FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY') {
       return window.FIREBASE_CONFIG;
     }
-    const saved = localStorage.getItem('mc_firebase_config');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.apiKey && parsed.apiKey !== 'YOUR_API_KEY') return parsed;
-      } catch (e) { }
-    }
-    return window.FIREBASE_CONFIG || null;
+    return null;
   }
 
   function initFirebaseApp() {
@@ -562,41 +555,6 @@
       await loadInitialData();
     } catch (err) {
       showToast(err.message, 'error');
-    }
-  }
-
-  function saveFirebaseConfig() {
-    const textarea = document.getElementById('inputFirebaseConfig');
-    if (!textarea || !textarea.value.trim()) {
-      showToast('Please paste your Firebase configuration.', 'error');
-      return;
-    }
-
-    let raw = textarea.value.trim();
-    raw = raw.replace(/^const\s+\w+\s*=\s*/, '').replace(/;\s*$/, '');
-
-    try {
-      let parsed = null;
-      try {
-        parsed = JSON.parse(raw);
-      } catch (e) {
-        parsed = (new Function(`return (${raw});`))();
-      }
-
-      if (!parsed || !parsed.apiKey) {
-        throw new Error('Config missing apiKey.');
-      }
-
-      localStorage.setItem('mc_firebase_config', JSON.stringify(parsed));
-      window.FIREBASE_CONFIG = parsed;
-      initFirebaseApp();
-
-      const box = document.getElementById('firebaseConfigBox');
-      if (box) box.style.display = 'none';
-
-      showToast('Firebase configuration saved successfully! You can now click Continue with Google.', 'success');
-    } catch (err) {
-      showToast('Could not parse Firebase configuration: ' + err.message, 'error');
     }
   }
 
@@ -1797,7 +1755,6 @@
     submitEmailLogin,
     submitEmailRegister,
     loginWithFirebaseGoogle,
-    saveFirebaseConfig,
     logout,
     onDepartmentSelected,
     onDoctorSelected,
