@@ -14,16 +14,15 @@
 
   <style>
     /* ============================================================
-       Modern Split-Screen Authentication Design (Tuga / Minimalist)
+       Native Full-Screen Split Web Authentication Layout
        ============================================================ */
     :root {
-      --bg-page: #eaedf0;
-      --card-bg: #ffffff;
-      --mint-bg: #f0f7f3;
-      --text-dark: #111827;
+      --bg-canvas: #ffffff;
+      --mint-panel: #f0f7f4;
+      --text-main: #111827;
       --text-muted: #6b7280;
       --text-light: #9ca3af;
-      --border-color: #e5e7eb;
+      --border-subtle: #e5e7eb;
       --btn-black: #111827;
       --btn-black-hover: #000000;
       --primary-blue: #0284c7;
@@ -37,137 +36,93 @@
       padding: 0;
     }
 
-    body {
+    html, body {
+      height: 100%;
       font-family: var(--font-family);
-      background-color: var(--bg-page);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px 16px;
-      color: var(--text-dark);
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Outer Browser / Window Frame */
-    .app-window {
+    /* Main Full-Screen Split View */
+    .login-page-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.08fr;
+      min-height: 100vh;
       width: 100%;
-      max-width: 1020px;
-      background: var(--card-bg);
-      border-radius: 28px;
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
     }
 
-    /* Browser Header Bar */
-    .window-header {
-      background: #ffffff;
-      border-bottom: 1px solid #f1f3f5;
-      padding: 12px 20px;
+    /* ------------------------------------------------------------
+       Left Column: Authentication Form
+       ------------------------------------------------------------ */
+    .auth-column {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 40px 64px 32px 64px;
+      max-width: 560px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Brand Header */
+    .brand-header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text-main);
       user-select: none;
     }
 
-    .window-dots {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-
-    .dot {
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-    }
-
-    .dot-red { background: #ff5f56; }
-    .dot-yellow { background: #ffbd2e; }
-    .dot-green { background: #27c93f; }
-
-    .window-nav-arrows {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: #9ca3af;
-      margin-left: 16px;
-      cursor: pointer;
-    }
-
-    .window-address-bar {
-      flex: 1;
-      max-width: 440px;
-      margin: 0 auto;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 9999px;
-      padding: 5px 14px;
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0284c7, #0ea5e9);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      font-size: 11.5px;
-      color: #64748b;
-      letter-spacing: 0.1px;
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);
     }
 
-    .window-address-bar svg {
-      color: #10b981;
-    }
-
-    .window-actions {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      color: #94a3b8;
-    }
-
-    /* Main Split-Screen Container */
-    .auth-container {
-      display: grid;
-      grid-template-columns: 1.05fr 1.15fr;
-      min-height: 600px;
-    }
-
-    /* Left Side: Form Section */
-    .auth-form-side {
-      padding: 44px 48px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .brand-mini {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 700;
-      font-size: 13.5px;
-      color: var(--primary-blue);
-      margin-bottom: 24px;
-      text-decoration: none;
-    }
-
-    .auth-title {
-      font-size: 32px;
+    .brand-title {
+      font-size: 19px;
       font-weight: 800;
-      color: var(--text-dark);
-      letter-spacing: -0.6px;
-      margin-bottom: 8px;
+      letter-spacing: -0.4px;
+      color: var(--text-main);
     }
 
-    .auth-subtitle {
-      font-size: 13.5px;
+    .brand-title span {
+      color: var(--primary-blue);
+    }
+
+    /* Main Form Container */
+    .form-wrapper {
+      margin: auto 0;
+      padding: 24px 0;
+      width: 100%;
+    }
+
+    .auth-heading {
+      font-size: 34px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.8px;
+      margin-bottom: 10px;
+      line-height: 1.2;
+    }
+
+    .auth-description {
+      font-size: 14px;
       color: var(--text-muted);
-      line-height: 1.55;
-      margin-bottom: 30px;
-      max-width: 360px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+      max-width: 400px;
     }
 
-    /* Input Fields */
+    /* Inputs */
     .form-group {
       margin-bottom: 16px;
       position: relative;
@@ -178,10 +133,10 @@
       height: 52px;
       padding: 0 24px;
       border-radius: 9999px;
-      border: 1.5px solid var(--border-color);
+      border: 1.5px solid var(--border-subtle);
       background: #ffffff;
-      font-size: 14px;
-      color: var(--text-dark);
+      font-size: 14.5px;
+      color: var(--text-main);
       outline: none;
       transition: all 0.2s ease;
       font-family: inherit;
@@ -189,7 +144,7 @@
 
     .pill-input:focus {
       border-color: var(--btn-black);
-      box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+      box-shadow: 0 0 0 4px rgba(17, 24, 39, 0.06);
     }
 
     .pill-input::placeholder {
@@ -197,7 +152,7 @@
     }
 
     .input-has-icon {
-      padding-right: 50px;
+      padding-right: 52px;
     }
 
     .input-icon-btn {
@@ -217,73 +172,73 @@
     }
 
     .input-icon-btn:hover {
-      color: var(--text-dark);
+      color: var(--text-main);
     }
 
     .form-sublinks {
       display: flex;
       justify-content: flex-end;
       margin-top: 4px;
-      margin-bottom: 20px;
+      margin-bottom: 22px;
     }
 
     .forgot-link {
-      font-size: 12.5px;
+      font-size: 13px;
       font-weight: 600;
-      color: var(--text-dark);
+      color: var(--text-main);
       text-decoration: none;
       cursor: pointer;
       transition: opacity 0.15s;
     }
 
     .forgot-link:hover {
-      opacity: 0.75;
+      opacity: 0.7;
       text-decoration: underline;
     }
 
-    /* Black Pill Action Button */
-    .btn-pill-login {
+    /* Full-Width Pill Action Button */
+    .btn-pill-submit {
       width: 100%;
       height: 52px;
       border-radius: 9999px;
       background: var(--btn-black);
       color: #ffffff;
-      font-size: 15px;
+      font-size: 15.5px;
       font-weight: 600;
       border: none;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
       font-family: inherit;
-      box-shadow: 0 4px 12px rgba(17, 24, 39, 0.15);
+      box-shadow: 0 4px 14px rgba(17, 24, 39, 0.18);
     }
 
-    .btn-pill-login:hover {
+    .btn-pill-submit:hover {
       background: var(--btn-black-hover);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(17, 24, 39, 0.25);
+      transform: translateY(-1.5px);
+      box-shadow: 0 8px 20px rgba(17, 24, 39, 0.26);
     }
 
-    .btn-pill-login:active {
+    .btn-pill-submit:active {
       transform: translateY(0);
     }
 
-    .btn-pill-login:disabled {
+    .btn-pill-submit:disabled {
       opacity: 0.65;
       cursor: not-allowed;
       transform: none;
     }
 
-    /* Social Auth Divider */
+    /* Divider */
     .divider-row {
       display: flex;
       align-items: center;
-      margin: 24px 0 20px 0;
+      margin: 26px 0 22px 0;
       color: var(--text-light);
-      font-size: 12.5px;
+      font-size: 13px;
     }
 
     .divider-row::before,
@@ -295,10 +250,10 @@
     }
 
     .divider-row span {
-      padding: 0 14px;
+      padding: 0 16px;
     }
 
-    /* Circular Social Buttons */
+    /* Circular Social Buttons (Google, Apple, Facebook) */
     .social-buttons-row {
       display: flex;
       justify-content: center;
@@ -308,8 +263,8 @@
     }
 
     .social-circle-btn {
-      width: 48px;
-      height: 48px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
       background: var(--btn-black);
       border: 1.5px solid var(--btn-black);
@@ -323,8 +278,8 @@
     }
 
     .social-circle-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+      transform: translateY(-2.5px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
       background: #000000;
     }
 
@@ -332,7 +287,7 @@
       transform: translateY(0);
     }
 
-    /* Bottom Switcher */
+    /* Footer Switcher */
     .auth-footer {
       text-align: center;
       font-size: 13.5px;
@@ -340,7 +295,7 @@
     }
 
     .auth-footer a {
-      color: var(--text-dark);
+      color: var(--text-main);
       font-weight: 700;
       text-decoration: none;
       cursor: pointer;
@@ -351,30 +306,39 @@
       text-decoration: underline;
     }
 
-    /* Alert Banner */
+    .legal-footer {
+      font-size: 12px;
+      color: var(--text-light);
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    /* Error Message Banner */
     .auth-error-banner {
       background: #fff1f2;
       border: 1px solid #fecdd3;
       color: #9f1239;
-      padding: 10px 16px;
+      padding: 11px 18px;
       border-radius: 9999px;
-      font-size: 12.5px;
-      margin-bottom: 16px;
+      font-size: 13px;
+      margin-bottom: 20px;
       display: none;
       text-align: center;
     }
 
-    /* Right Side: Illustration Card */
-    .auth-visual-side {
-      padding: 18px 20px 20px 0;
+    /* ------------------------------------------------------------
+       Right Column: Expansive Mint Wellness Panel
+       ------------------------------------------------------------ */
+    .visual-column {
+      padding: 16px 16px 16px 0;
       display: flex;
     }
 
-    .visual-card {
+    .mint-card {
       width: 100%;
-      background: var(--mint-bg);
-      border-radius: 24px;
-      padding: 36px 32px 30px 32px;
+      background-color: var(--mint-panel);
+      border-radius: 32px;
+      padding: 48px 40px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -383,11 +347,38 @@
       overflow: hidden;
     }
 
-    /* Floating Illustration Area */
+    /* Top strip inside visual card */
+    .visual-top-strip {
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .verified-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #065f46;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .verified-pill svg {
+      color: #10b981;
+    }
+
+    /* Central Illustration Stage */
     .illustration-stage {
       position: relative;
       width: 100%;
-      max-width: 380px;
+      max-width: 440px;
       margin: auto 0;
       display: flex;
       align-items: center;
@@ -397,15 +388,15 @@
     /* Floating Bubble 1 (Top Left) */
     .floating-bubble-1 {
       position: absolute;
-      top: 10px;
-      left: 15px;
-      width: 46px;
-      height: 46px;
+      top: 15px;
+      left: 10px;
+      width: 54px;
+      height: 54px;
       border-radius: 50%;
       background: #ffffff;
-      padding: 2px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.06);
-      animation: floatSlow 4s ease-in-out infinite alternate;
+      padding: 3px;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+      animation: floatSlow 4.5s ease-in-out infinite alternate;
       z-index: 2;
     }
 
@@ -419,14 +410,14 @@
     /* Floating Bubble 2 (Mid Right) */
     .floating-bubble-2 {
       position: absolute;
-      right: 12px;
+      right: 15px;
       top: 48%;
-      width: 44px;
-      height: 44px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
       background: #ffffff;
-      padding: 2px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+      padding: 3px;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
       animation: floatSlow 5s ease-in-out infinite alternate-reverse;
       z-index: 2;
     }
@@ -438,53 +429,53 @@
       object-fit: cover;
     }
 
-    /* Floating Task Card (Bottom Left of Figure) */
+    /* Floating Task Card (Bottom Left of Illustration) */
     .floating-task-card {
       position: absolute;
-      bottom: 20px;
-      left: -8px;
+      bottom: 24px;
+      left: -10px;
       background: #ffffff;
-      border-radius: 18px;
-      padding: 12px 18px;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+      border-radius: 20px;
+      padding: 14px 20px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.07);
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      min-width: 155px;
+      gap: 8px;
+      min-width: 175px;
       z-index: 3;
-      border: 1px solid rgba(0,0,0,0.03);
-      animation: floatCard 4.5s ease-in-out infinite alternate;
+      border: 1px solid rgba(0,0,0,0.02);
+      animation: floatCard 4.8s ease-in-out infinite alternate;
     }
 
     .task-card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 14px;
     }
 
     .task-card-title {
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 700;
-      color: var(--text-dark);
+      color: var(--text-main);
     }
 
     .task-card-sub {
-      font-size: 11px;
+      font-size: 11.5px;
       color: var(--text-light);
     }
 
     .task-progress-ring {
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      border: 3px solid #e2e8f0;
+      border: 3.5px solid #e2e8f0;
       border-top-color: #10b981;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 8.5px;
-      font-weight: 700;
+      font-size: 9.5px;
+      font-weight: 800;
       color: #065f46;
     }
 
@@ -493,17 +484,17 @@
       align-self: flex-start;
       border: 1.5px solid #d1d5db;
       border-radius: 9999px;
-      padding: 2px 10px;
-      font-size: 10.5px;
+      padding: 3px 12px;
+      font-size: 11px;
       font-weight: 600;
-      color: var(--text-dark);
+      color: var(--text-main);
       background: #fafafa;
     }
 
-    /* Main Meditation Vector Figure */
+    /* Zen Meditation Vector Artwork */
     .zen-illustration {
       width: 100%;
-      max-width: 310px;
+      max-width: 360px;
       height: auto;
       display: block;
       margin: 0 auto;
@@ -513,7 +504,7 @@
     .visual-footer {
       text-align: center;
       width: 100%;
-      margin-top: 15px;
+      margin-top: 10px;
     }
 
     /* Carousel Dots */
@@ -521,13 +512,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 7px;
       margin-bottom: 18px;
     }
 
     .c-dot {
-      width: 6px;
-      height: 6px;
+      width: 7px;
+      height: 7px;
       border-radius: 9999px;
       background: #cbd5e1;
       transition: all 0.3s ease;
@@ -535,49 +526,50 @@
     }
 
     .c-dot.active {
-      width: 22px;
+      width: 26px;
       background: var(--btn-black);
     }
 
     .visual-tagline {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text-dark);
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--text-main);
       line-height: 1.4;
-      max-width: 310px;
+      max-width: 380px;
       margin: 0 auto;
+      letter-spacing: -0.3px;
     }
 
     .visual-subtext {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--text-muted);
-      margin-top: 6px;
+      margin-top: 8px;
     }
 
-    /* Floating Animations */
+    /* Floating Keyframe Animations */
     @keyframes floatSlow {
       0% { transform: translateY(0); }
-      100% { transform: translateY(-7px); }
+      100% { transform: translateY(-8px); }
     }
 
     @keyframes floatCard {
       0% { transform: translateY(0) scale(1); }
-      100% { transform: translateY(-6px) scale(1.01); }
+      100% { transform: translateY(-7px) scale(1.01); }
     }
 
-    /* Toast Notification */
+    /* Toast Notification Popup */
     .toast-popup {
       position: fixed;
-      bottom: 24px;
+      bottom: 28px;
       left: 50%;
       transform: translateX(-50%) translateY(100px);
       background: #111827;
       color: #ffffff;
-      padding: 12px 24px;
+      padding: 13px 26px;
       border-radius: 9999px;
-      font-size: 13.5px;
+      font-size: 14px;
       font-weight: 500;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.22);
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
       opacity: 0;
       pointer-events: none;
@@ -602,332 +594,329 @@
       border: 1px solid #f43f5e;
     }
 
-    /* Mobile / Tablet Responsiveness */
-    @media (max-width: 860px) {
-      .auth-container {
+    /* ------------------------------------------------------------
+       Responsive Breakpoints
+       ------------------------------------------------------------ */
+    @media (max-width: 980px) {
+      .login-page-layout {
         grid-template-columns: 1fr;
       }
 
-      .auth-visual-side {
-        padding: 0 20px 20px 20px;
+      .auth-column {
+        padding: 36px 32px;
+        max-width: 500px;
+      }
+
+      .visual-column {
+        padding: 0 24px 32px 24px;
         order: -1;
       }
 
-      .visual-card {
-        padding: 24px 20px;
+      .mint-card {
+        padding: 32px 24px;
+        border-radius: 24px;
       }
 
       .illustration-stage {
-        max-width: 250px;
+        max-width: 300px;
       }
 
-      .auth-form-side {
-        padding: 30px 24px 40px 24px;
+      .auth-heading {
+        font-size: 28px;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .auth-column {
+        padding: 24px 20px;
       }
 
-      .auth-title {
-        font-size: 26px;
+      .visual-column {
+        display: none; /* Focus completely on swift login on small mobile */
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- Mockup Window Frame (matching screenshot) -->
-  <div class="app-window">
+  <!-- Full-Screen Split View -->
+  <main class="login-page-layout">
     
-    <!-- Top Browser Header Bar -->
-    <div class="window-header">
-      <div class="window-dots">
-        <span class="dot dot-red"></span>
-        <span class="dot dot-yellow"></span>
-        <span class="dot dot-green"></span>
-        <div class="window-nav-arrows">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </div>
-      </div>
-
-      <div class="window-address-bar">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-        <span>https://medicare-connect.app/login</span>
-      </div>
-
-      <div class="window-actions">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-      </div>
-    </div>
-
-    <!-- Main Content Grid -->
-    <div class="auth-container">
+    <!-- LEFT SIDE: Clean Healthcare Authentication -->
+    <div class="auth-column">
       
-      <!-- LEFT SIDE: Modern Authentication Form -->
-      <div class="auth-form-side">
-        <a href="/index.html" class="brand-mini" title="Back to MediCare Portal">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Brand Logo / Header -->
+      <a href="/index.html" class="brand-header" title="Go to MediCare Connect Home">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
           </svg>
-          MediCare Connect
-        </a>
+        </div>
+        <div class="brand-title">MediCare <span>Connect</span></div>
+      </a>
 
-        <!-- 1. LOGIN MODE -->
-        <div id="loginView">
-          <h1 class="auth-title">Welcome back!</h1>
-          <p class="auth-subtitle">
-            Simplify your consultations and prioritize your health with MediCare Connect. Get started for free.
-          </p>
+      <!-- 1. LOGIN MODE -->
+      <div id="loginView" class="form-wrapper">
+        <h1 class="auth-heading">Welcome back!</h1>
+        <p class="auth-description">
+          Simplify your workflow and prioritize your health with MediCare Connect. Get started for free.
+        </p>
 
-          <div id="loginError" class="auth-error-banner"></div>
+        <div id="loginError" class="auth-error-banner"></div>
 
-          <form id="formLogin" onsubmit="event.preventDefault(); handleLoginSubmit();">
-            <div class="form-group">
-              <input type="email" id="loginEmail" class="pill-input" placeholder="Username or Email" required autocomplete="email" />
-            </div>
-
-            <div class="form-group">
-              <input type="password" id="loginPassword" class="pill-input input-has-icon" placeholder="Password" required autocomplete="current-password" />
-              <button type="button" class="input-icon-btn" onclick="togglePasswordVisibility('loginPassword', this)" title="Show/Hide password">
-                <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-            </div>
-
-            <div class="form-sublinks">
-              <a class="forgot-link" onclick="handleForgotPassword()">Forgot Password?</a>
-            </div>
-
-            <button type="submit" id="btnLoginSubmit" class="btn-pill-login">
-              <span>Login</span>
-            </button>
-          </form>
-
-          <div class="divider-row">
-            <span>or continue with</span>
+        <form id="formLogin" onsubmit="event.preventDefault(); handleLoginSubmit();">
+          <div class="form-group">
+            <input type="email" id="loginEmail" class="pill-input" placeholder="Username or Email" required autocomplete="email" />
           </div>
 
-          <!-- Social Buttons (Google with Firebase, Apple, Facebook) -->
-          <div class="social-buttons-row">
-            <!-- Google (Firebase Real Auth) -->
-            <button type="button" class="social-circle-btn" onclick="handleGoogleSignIn()" title="Sign in with Google">
-              <svg width="20" height="20" viewBox="0 0 24 24">
-                <path fill="#ffffff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#ffffff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#ffffff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                <path fill="#ffffff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-              </svg>
-            </button>
-
-            <!-- Apple -->
-            <button type="button" class="social-circle-btn" onclick="handleSocialNotice('Apple')" title="Sign in with Apple">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.01-.49 2.63-1.24z"/>
-              </svg>
-            </button>
-
-            <!-- Facebook -->
-            <button type="button" class="social-circle-btn" onclick="handleSocialNotice('Facebook')" title="Sign in with Facebook">
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          <div class="form-group">
+            <input type="password" id="loginPassword" class="pill-input input-has-icon" placeholder="Password" required autocomplete="current-password" />
+            <button type="button" class="input-icon-btn" onclick="togglePasswordVisibility('loginPassword', this)" title="Show/Hide password">
+              <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
               </svg>
             </button>
           </div>
 
-          <div class="auth-footer">
-            Not a member? <a onclick="switchAuthView('register')">Register now</a>
+          <div class="form-sublinks">
+            <a class="forgot-link" onclick="handleForgotPassword()">Forgot Password?</a>
           </div>
+
+          <button type="submit" id="btnLoginSubmit" class="btn-pill-submit">
+            <span>Login</span>
+          </button>
+        </form>
+
+        <div class="divider-row">
+          <span>or continue with</span>
         </div>
 
-        <!-- 2. REGISTER MODE -->
-        <div id="registerView" style="display:none;">
-          <h1 class="auth-title">Join Us!</h1>
-          <p class="auth-subtitle">
-            Create your patient account to book specialist appointments and manage your health seamlessly.
-          </p>
+        <!-- Social Buttons (Google via Firebase, Apple, Facebook) -->
+        <div class="social-buttons-row">
+          <!-- Google Sign-In -->
+          <button type="button" class="social-circle-btn" onclick="handleGoogleSignIn()" title="Continue with Google">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <path fill="#ffffff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#ffffff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#ffffff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#ffffff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+          </button>
 
-          <div id="regError" class="auth-error-banner"></div>
+          <!-- Apple -->
+          <button type="button" class="social-circle-btn" onclick="handleSocialNotice('Apple')" title="Continue with Apple">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.01-.49 2.63-1.24z"/>
+            </svg>
+          </button>
 
-          <form id="formRegister" onsubmit="event.preventDefault(); handleRegisterSubmit();">
-            <div class="form-group">
-              <input type="text" id="regName" class="pill-input" placeholder="Full Name (e.g. Sarah Jenkins)" required autocomplete="name" />
-            </div>
-
-            <div class="form-group">
-              <input type="email" id="regEmail" class="pill-input" placeholder="Email Address" required autocomplete="email" />
-            </div>
-
-            <div class="form-group">
-              <input type="password" id="regPassword" class="pill-input input-has-icon" placeholder="Create Password (min. 6 characters)" required minlength="6" autocomplete="new-password" />
-              <button type="button" class="input-icon-btn" onclick="togglePasswordVisibility('regPassword', this)" title="Show/Hide password">
-                <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-            </div>
-
-            <button type="submit" id="btnRegSubmit" class="btn-pill-login" style="margin-top: 10px;">
-              <span>Create Account</span>
-            </button>
-          </form>
-
-          <div class="divider-row">
-            <span>or sign up with</span>
-          </div>
-
-          <div class="social-buttons-row">
-            <button type="button" class="social-circle-btn" onclick="handleGoogleSignIn()" title="Sign up with Google">
-              <svg width="20" height="20" viewBox="0 0 24 24">
-                <path fill="#ffffff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#ffffff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#ffffff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                <path fill="#ffffff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-              </svg>
-            </button>
-            <button type="button" class="social-circle-btn" onclick="handleSocialNotice('Apple')">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.01-.49 2.63-1.24z"/>
-              </svg>
-            </button>
-            <button type="button" class="social-circle-btn" onclick="handleSocialNotice('Facebook')">
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
-            </button>
-          </div>
-
-          <div class="auth-footer">
-            Already a member? <a onclick="switchAuthView('login')">Sign in</a>
-          </div>
+          <!-- Facebook -->
+          <button type="button" class="social-circle-btn" onclick="handleSocialNotice('Facebook')" title="Continue with Facebook">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+          </button>
         </div>
 
+        <div class="auth-footer">
+          Not a member? <a onclick="switchAuthView('register')">Register now</a>
+        </div>
       </div>
 
-      <!-- RIGHT SIDE: Mint Wellness Illustration Card (Exact Match) -->
-      <div class="auth-visual-side">
-        <div class="visual-card">
-          
-          <div class="illustration-stage">
-            
-            <!-- Floating Avatar 1 (Top Left) -->
-            <div class="floating-bubble-1" title="Dr. Marcus Vance">
-              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face" alt="Patient Avatar" />
-            </div>
+      <!-- 2. REGISTER MODE -->
+      <div id="registerView" class="form-wrapper" style="display:none;">
+        <h1 class="auth-heading">Join Us!</h1>
+        <p class="auth-description">
+          Create your patient account to book specialist appointments and manage your health seamlessly.
+        </p>
 
-            <!-- Floating Avatar 2 (Mid Right) -->
-            <div class="floating-bubble-2" title="Sarah Jenkins">
-              <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=face" alt="Doctor Avatar" />
-            </div>
+        <div id="regError" class="auth-error-banner"></div>
 
-            <!-- Floating Card: Health Checkup / Doctor Consultations -->
-            <div class="floating-task-card">
-              <div class="task-card-header">
-                <div>
-                  <div class="task-card-title">Doctor Consult</div>
-                  <div class="task-card-sub">12 Specialists</div>
-                </div>
-                <div class="task-progress-ring" title="84% available slots today">
-                  84%
-                </div>
-              </div>
-              <span class="task-card-pill">Cardiology</span>
-            </div>
-
-            <!-- Zen Meditation Minimalist Vector Artwork -->
-            <svg class="zen-illustration" viewBox="0 0 340 330" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Calming Aura / Wellness Clouds (Green outlines) -->
-              <path d="M70 120 C 60 70, 110 50, 150 65 C 180 40, 240 50, 250 85 C 280 95, 290 140, 265 170 C 290 200, 260 250, 220 240" 
-                    stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 4" opacity="0.65" />
-              
-              <path d="M85 170 C 60 195, 65 240, 105 245 C 110 270, 140 280, 170 270" 
-                    stroke="#10b981" stroke-width="1.8" stroke-linecap="round" opacity="0.5" />
-
-              <!-- Head & Serene Face -->
-              <path d="M170 82 C 158 82, 148 93, 148 108 C 148 122, 158 132, 170 132 C 182 132, 192 122, 192 108 C 192 93, 182 82, 170 82 Z" 
-                    fill="#ffffff" stroke="#111827" stroke-width="2.5" />
-              
-              <!-- Dark Hair -->
-              <path d="M150 102 C 148 88, 160 75, 175 75 C 190 75, 195 86, 193 98 C 188 95, 180 94, 172 96 C 165 98, 156 104, 150 102 Z" 
-                    fill="#111827" />
-
-              <!-- Gentle Peaceful Eyes & Smile -->
-              <path d="M161 106 Q 164 109 167 106" stroke="#111827" stroke-width="2" stroke-linecap="round" fill="none" />
-              <path d="M174 106 Q 177 109 180 106" stroke="#111827" stroke-width="2" stroke-linecap="round" fill="none" />
-              <path d="M167 116 Q 170 119 173 116" stroke="#111827" stroke-width="1.8" stroke-linecap="round" fill="none" />
-
-              <!-- Neck -->
-              <path d="M165 131 L 165 140 L 175 140 L 175 131" stroke="#111827" stroke-width="2.2" fill="#ffffff" />
-
-              <!-- Torso / Green Wellness Sweater -->
-              <path d="M152 140 C 138 143, 130 162, 126 195 C 142 200, 198 200, 214 195 C 210 162, 202 143, 188 140 Z" 
-                    fill="#86efac" stroke="#111827" stroke-width="2.5" stroke-linejoin="round" />
-
-              <!-- Heart Emblem on Chest -->
-              <path d="M170 178 C 170 178, 158 170, 158 162 C 158 156, 163 152, 168 155 C 170 156, 170 157, 170 157 C 170 157, 170 156, 172 155 C 177 152, 182 156, 182 162 C 182 170, 170 178, 170 178 Z" 
-                    fill="#ffffff" stroke="#10b981" stroke-width="2" />
-
-              <!-- Left Arm (Meditative Raised Pose) -->
-              <path d="M135 150 Q 112 170 102 155 Q 96 142 104 135" 
-                    stroke="#111827" stroke-width="2.5" stroke-linecap="round" fill="none" />
-              <!-- Left Hand Mudra -->
-              <circle cx="106" cy="135" r="5" fill="#ffffff" stroke="#111827" stroke-width="2" />
-
-              <!-- Right Arm (Meditative Raised Pose) -->
-              <path d="M205 150 Q 228 170 238 155 Q 244 142 236 135" 
-                    stroke="#111827" stroke-width="2.5" stroke-linecap="round" fill="none" />
-              <!-- Right Hand Mudra -->
-              <circle cx="234" cy="135" r="5" fill="#ffffff" stroke="#111827" stroke-width="2" />
-
-              <!-- Crossed Legs (Padmasana / Yoga pose) -->
-              <!-- White Pants -->
-              <path d="M126 195 C 115 208, 108 232, 138 238 C 160 242, 170 215, 170 215 C 170 215, 180 242, 202 238 C 232 232, 225 208, 214 195 Z" 
-                    fill="#ffffff" stroke="#111827" stroke-width="2.5" stroke-linejoin="round" />
-              
-              <!-- Crossed Shins & Bare Feet -->
-              <path d="M124 222 C 138 236, 175 250, 204 225" stroke="#111827" stroke-width="2.2" stroke-linecap="round" fill="none" />
-              <path d="M216 222 C 202 236, 165 250, 136 225" stroke="#111827" stroke-width="2.2" stroke-linecap="round" fill="none" />
-
-              <!-- Feet / Toes detail -->
-              <ellipse cx="145" cy="245" rx="9" ry="5" fill="#ffffff" stroke="#111827" stroke-width="2" />
-              <ellipse cx="195" cy="245" rx="9" ry="5" fill="#ffffff" stroke="#111827" stroke-width="2" />
-            </svg>
-
+        <form id="formRegister" onsubmit="event.preventDefault(); handleRegisterSubmit();">
+          <div class="form-group">
+            <input type="text" id="regName" class="pill-input" placeholder="Full Name (e.g. Sarah Jenkins)" required autocomplete="name" />
           </div>
 
-          <!-- Carousel Dots & Bottom Tagline -->
-          <div class="visual-footer">
-            <div class="carousel-dots" id="carouselDots">
-              <span class="c-dot active" onclick="setSlide(0)"></span>
-              <span class="c-dot" onclick="setSlide(1)"></span>
-              <span class="c-dot" onclick="setSlide(2)"></span>
-            </div>
-
-            <div class="visual-tagline" id="slideTagline">
-              Make your healthcare easier and organized with MediCare Connect
-            </div>
-            <div class="visual-subtext" id="slideSubtext">
-              Trusted by 10,000+ patients and certified hospital doctors
-            </div>
+          <div class="form-group">
+            <input type="email" id="regEmail" class="pill-input" placeholder="Email Address" required autocomplete="email" />
           </div>
 
+          <div class="form-group">
+            <input type="password" id="regPassword" class="pill-input input-has-icon" placeholder="Create Password (min. 6 characters)" required minlength="6" autocomplete="new-password" />
+            <button type="button" class="input-icon-btn" onclick="togglePasswordVisibility('regPassword', this)" title="Show/Hide password">
+              <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+
+          <button type="submit" id="btnRegSubmit" class="btn-pill-submit" style="margin-top: 8px;">
+            <span>Create Account</span>
+          </button>
+        </form>
+
+        <div class="divider-row">
+          <span>or sign up with</span>
         </div>
+
+        <div class="social-buttons-row">
+          <button type="button" class="social-circle-btn" onclick="handleGoogleSignIn()" title="Sign up with Google">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <path fill="#ffffff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#ffffff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#ffffff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#ffffff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+          </button>
+          <button type="button" class="social-circle-btn" onclick="handleSocialNotice('Apple')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.01-.49 2.63-1.24z"/>
+            </svg>
+          </button>
+          <button type="button" class="social-circle-btn" onclick="handleSocialNotice('Facebook')">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="auth-footer">
+          Already a member? <a onclick="switchAuthView('login')">Sign in</a>
+        </div>
+      </div>
+
+      <!-- Legal / Security Note -->
+      <div class="legal-footer">
+        🔒 HIPAA & GDPR Compliant Medical Portal &bull; End-to-End Encrypted
       </div>
 
     </div>
-  </div>
+
+    <!-- RIGHT SIDE: Expansive Mint Wellness Canvas -->
+    <div class="visual-column">
+      <div class="mint-card">
+        
+        <!-- Top Pill -->
+        <div class="visual-top-strip">
+          <div class="verified-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"></circle></svg>
+            24/7 Verified Healthcare Portal
+          </div>
+        </div>
+
+        <div class="illustration-stage">
+          
+          <!-- Floating Avatar 1 (Top Left) -->
+          <div class="floating-bubble-1" title="Dr. Marcus Vance (Cardiologist)">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop&crop=face" alt="Patient Avatar" />
+          </div>
+
+          <!-- Floating Avatar 2 (Mid Right) -->
+          <div class="floating-bubble-2" title="Sarah Jenkins (Patient)">
+            <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=120&h=120&fit=crop&crop=face" alt="Doctor Avatar" />
+          </div>
+
+          <!-- Floating Consultation Card (Exact match to Canva task card in image) -->
+          <div class="floating-task-card">
+            <div class="task-card-header">
+              <div>
+                <div class="task-card-title">Doctor Consult</div>
+                <div class="task-card-sub">12 Specialists</div>
+              </div>
+              <div class="task-progress-ring" title="84% available slots">
+                84%
+              </div>
+            </div>
+            <span class="task-card-pill">Cardiology</span>
+          </div>
+
+          <!-- Zen Minimalist Line-Art Vector Artwork (Exact Match) -->
+          <svg class="zen-illustration" viewBox="0 0 340 330" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Calming Green Cloud Ripples -->
+            <path d="M70 120 C 60 70, 110 50, 150 65 C 180 40, 240 50, 250 85 C 280 95, 290 140, 265 170 C 290 200, 260 250, 220 240" 
+                  stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 4" opacity="0.65" />
+            
+            <path d="M85 170 C 60 195, 65 240, 105 245 C 110 270, 140 280, 170 270" 
+                  stroke="#10b981" stroke-width="1.8" stroke-linecap="round" opacity="0.5" />
+
+            <!-- Head & Peaceful Face -->
+            <path d="M170 82 C 158 82, 148 93, 148 108 C 148 122, 158 132, 170 132 C 182 132, 192 122, 192 108 C 192 93, 182 82, 170 82 Z" 
+                  fill="#ffffff" stroke="#111827" stroke-width="2.5" />
+            
+            <!-- Dark Hair -->
+            <path d="M150 102 C 148 88, 160 75, 175 75 C 190 75, 195 86, 193 98 C 188 95, 180 94, 172 96 C 165 98, 156 104, 150 102 Z" 
+                  fill="#111827" />
+
+            <!-- Peaceful Eyes & Smile -->
+            <path d="M161 106 Q 164 109 167 106" stroke="#111827" stroke-width="2" stroke-linecap="round" fill="none" />
+            <path d="M174 106 Q 177 109 180 106" stroke="#111827" stroke-width="2" stroke-linecap="round" fill="none" />
+            <path d="M167 116 Q 170 119 173 116" stroke="#111827" stroke-width="1.8" stroke-linecap="round" fill="none" />
+
+            <!-- Neck -->
+            <path d="M165 131 L 165 140 L 175 140 L 175 131" stroke="#111827" stroke-width="2.2" fill="#ffffff" />
+
+            <!-- Mint Wellness Sweater -->
+            <path d="M152 140 C 138 143, 130 162, 126 195 C 142 200, 198 200, 214 195 C 210 162, 202 143, 188 140 Z" 
+                  fill="#86efac" stroke="#111827" stroke-width="2.5" stroke-linejoin="round" />
+
+            <!-- Heart Emblem on Chest -->
+            <path d="M170 178 C 170 178, 158 170, 158 162 C 158 156, 163 152, 168 155 C 170 156, 170 157, 170 157 C 170 157, 170 156, 172 155 C 177 152, 182 156, 182 162 C 182 170, 170 178, 170 178 Z" 
+                  fill="#ffffff" stroke="#10b981" stroke-width="2" />
+
+            <!-- Left Arm (Meditative Pose) -->
+            <path d="M135 150 Q 112 170 102 155 Q 96 142 104 135" 
+                  stroke="#111827" stroke-width="2.5" stroke-linecap="round" fill="none" />
+            <circle cx="106" cy="135" r="5" fill="#ffffff" stroke="#111827" stroke-width="2" />
+
+            <!-- Right Arm (Meditative Pose) -->
+            <path d="M205 150 Q 228 170 238 155 Q 244 142 236 135" 
+                  stroke="#111827" stroke-width="2.5" stroke-linecap="round" fill="none" />
+            <circle cx="234" cy="135" r="5" fill="#ffffff" stroke="#111827" stroke-width="2" />
+
+            <!-- White Yoga Trousers (Crossed Legs) -->
+            <path d="M126 195 C 115 208, 108 232, 138 238 C 160 242, 170 215, 170 215 C 170 215, 180 242, 202 238 C 232 232, 225 208, 214 195 Z" 
+                  fill="#ffffff" stroke="#111827" stroke-width="2.5" stroke-linejoin="round" />
+            
+            <path d="M124 222 C 138 236, 175 250, 204 225" stroke="#111827" stroke-width="2.2" stroke-linecap="round" fill="none" />
+            <path d="M216 222 C 202 236, 165 250, 136 225" stroke="#111827" stroke-width="2.2" stroke-linecap="round" fill="none" />
+
+            <!-- Bare Feet -->
+            <ellipse cx="145" cy="245" rx="9" ry="5" fill="#ffffff" stroke="#111827" stroke-width="2" />
+            <ellipse cx="195" cy="245" rx="9" ry="5" fill="#ffffff" stroke="#111827" stroke-width="2" />
+          </svg>
+
+        </div>
+
+        <!-- Carousel Dots & Bottom Tagline -->
+        <div class="visual-footer">
+          <div class="carousel-dots" id="carouselDots">
+            <span class="c-dot active" onclick="setSlide(0)"></span>
+            <span class="c-dot" onclick="setSlide(1)"></span>
+            <span class="c-dot" onclick="setSlide(2)"></span>
+          </div>
+
+          <div class="visual-tagline" id="slideTagline">
+            Make your healthcare easier and organized with MediCare Connect
+          </div>
+          <div class="visual-subtext" id="slideSubtext">
+            Trusted by 10,000+ patients and certified hospital doctors
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
 
   <!-- Toast Notification Popup -->
   <div id="toastPopup" class="toast-popup"></div>
 
-  <!-- JavaScript Application Logic -->
+  <!-- Client Application Logic -->
   <script>
     // -------------------------------------------------------------
-    // Slides Content Carousel
+    // Slides Carousel
     // -------------------------------------------------------------
     const SLIDES = [
       {
@@ -1082,11 +1071,11 @@
           if (data.token) {
             localStorage.setItem('mc_token', data.token);
             showToast(`Welcome back, ${data.user.name}! Redirecting...`, 'success');
-            setTimeout(() => { window.location.href = '/index.html'; }, 1000);
+            setTimeout(() => { window.location.href = '/index.html'; }, 900);
             return;
           }
         } catch (err) {
-          console.warn('Firebase popup error:', err);
+          console.warn('Firebase popup notice:', err);
           if (err.code === 'auth/popup-closed-by-user') {
             showToast('Sign-in popup closed.', 'info');
             return;
@@ -1156,7 +1145,7 @@
         if (data.token) {
           localStorage.setItem('mc_token', data.token);
           showToast(`Welcome back, ${data.user.name}! Redirecting...`, 'success');
-          setTimeout(() => { window.location.href = '/index.html'; }, 900);
+          setTimeout(() => { window.location.href = '/index.html'; }, 800);
         }
       } catch (err) {
         showError('Connection error. Please try again.', 'login');
@@ -1206,7 +1195,7 @@
         if (data.token) {
           localStorage.setItem('mc_token', data.token);
           showToast(`Account created for ${data.user.name}! Redirecting...`, 'success');
-          setTimeout(() => { window.location.href = '/index.html'; }, 900);
+          setTimeout(() => { window.location.href = '/index.html'; }, 800);
         }
       } catch (err) {
         showError('Connection error. Please try again.', 'reg');
@@ -1220,16 +1209,15 @@
     document.addEventListener('DOMContentLoaded', () => {
       initFirebase();
 
-      // If already logged in, forward to dashboard
+      // If already logged in, redirect directly to dashboard
       const token = localStorage.getItem('mc_token');
       if (token) {
         fetch('/api/auth/me', {
           headers: { 'Authorization': `Bearer ${token}` }
         }).then(r => r.json()).then(data => {
           if (data && data.user) {
-            // Already logged in
             showToast(`Logged in as ${data.user.name}. Opening dashboard...`, 'success');
-            setTimeout(() => { window.location.href = '/index.html'; }, 1000);
+            setTimeout(() => { window.location.href = '/index.html'; }, 800);
           }
         }).catch(() => {});
       }
