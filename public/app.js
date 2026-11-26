@@ -170,6 +170,11 @@
   // Authentication & Initialization
   // -------------------------------------------------------------
   async function checkAuth() {
+    const token = localStorage.getItem('mc_token');
+    if (!token) {
+      clearUser();
+      return;
+    }
     try {
       const data = await apiRequest('/api/auth/me');
       if (data && data.user) {
@@ -177,11 +182,9 @@
         await loadInitialData();
       } else {
         clearUser();
-        openLoginModal();
       }
     } catch (err) {
       clearUser();
-      openLoginModal();
     }
   }
 
@@ -602,7 +605,7 @@
     }
     clearUser();
     showToast('You have been logged out securely.', 'info');
-    openLoginModal();
+    setTimeout(() => { window.location.href = '/login.html'; }, 700);
   }
 
   // -------------------------------------------------------------
@@ -890,7 +893,7 @@
   // -------------------------------------------------------------
   function openBookingModal(preselectedDeptId = null, preselectedDocId = null) {
     if (!state.currentUser) {
-      openLoginModal();
+      window.location.href = '/login.html';
       return;
     }
 
@@ -1664,7 +1667,7 @@
     // Nav and Hero booking buttons
     if (el.btnBookNav) el.btnBookNav.addEventListener('click', () => openBookingModal());
     if (el.btnBookHero) el.btnBookHero.addEventListener('click', () => openBookingModal());
-    if (el.btnSignIn) el.btnSignIn.addEventListener('click', () => openLoginModal());
+    if (el.btnSignIn) el.btnSignIn.addEventListener('click', (e) => { e.preventDefault(); window.location.href = '/login.html'; });
     if (el.btnLogout) el.btnLogout.addEventListener('click', () => logout());
 
     // Close modal on backdrop click
