@@ -1,13 +1,13 @@
 // public/firebase-config.js
 // Firebase Web App Configuration
-// Replace the values below with your Firebase project keys, or paste them in chat!
+// Configured with Epics project keys
 
 window.FIREBASE_CONFIG = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyD8IEe9onmRsvkE3LUjlY9rvmtj24sUtsI",
+  authDomain: "epics-10c47.firebaseapp.com",
+  projectId: "epics-10c47",
+  storageBucket: "epics-10c47.firebasestorage.app",
+  messagingSenderId: "54660192371",
+  appId: "1:54660192371:web:cfbd421102f25357b3b206",
+  measurementId: "G-5277HSFK7N"
 };
-
