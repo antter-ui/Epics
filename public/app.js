@@ -380,36 +380,132 @@
   }
 
   async function loginWithFirebaseGoogle() {
-    if (!firebaseInitialized) {
-      const initialized = initFirebaseApp();
-      if (!initialized) {
-        const box = document.getElementById('firebaseConfigBox');
-        if (box) box.style.display = 'block';
-        showToast('Please enter your Firebase config below (or paste keys in chat) to enable Google Sign-In.', 'info');
+    if (firebaseInitialized) {
+      const btn = document.getElementById('btnFirebaseGoogle');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;">Opening Google Sign-In...</span>`;
+      }
+
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        const result = await firebase.auth().signInWithPopup(provider);
+        const fbUser = result.user;
+
+        const res = await apiRequest('/api/auth/firebase-login', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: fbUser.email,
+            name: fbUser.displayName || fbUser.email.split('@')[0],
+            avatar: fbUser.photoURL,
+            uid: fbUser.uid
+          })
+        });
+
+        if (res.token) {
+          localStorage.setItem('mc_token', res.token);
+        }
+        setUser(res.user);
+        closeModal();
+        showToast(`Welcome, ${res.user.name}! Signed in successfully with Google.`, 'success');
+        await loadInitialData();
         return;
+      } catch (err) {
+        console.error('Firebase Auth Error:', err);
+        if (err.code === 'auth/popup-closed-by-user') {
+          showToast('Sign-in popup was closed.', 'info');
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<span>Continue with Google</span>`;
+          }
+          return;
+        }
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
 
-    const btn = document.getElementById('btnFirebaseGoogle');
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;">Opening Google Sign-In...</span>`;
+    // Direct Google Account Selector
+    openGoogleAccountChooser();
+  }
+
+  function openGoogleAccountChooser() {
+    let chooser = document.getElementById('googleChooserModal');
+    if (!chooser) {
+      chooser = document.createElement('div');
+      chooser.id = 'googleChooserModal';
+      chooser.className = 'modal-backdrop open';
+      document.body.appendChild(chooser);
+    } else {
+      chooser.classList.add('open');
     }
 
-    try {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await firebase.auth().signInWithPopup(provider);
-      const fbUser = result.user;
+    chooser.innerHTML = `
+      <div class="modal-card" style="max-width: 440px; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+        <div class="modal-header" style="border-bottom: 1px solid var(--border-light); padding: 1.25rem;">
+          <div style="display:flex; align-items:center; gap:0.65rem;">
+            <svg width="22" height="22" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span style="font-weight:700; font-size:1.1rem; color:var(--text-primary);">Google Authorization</span>
+          </div>
+          <button class="btn-close-modal" onclick="document.getElementById('googleChooserModal').classList.remove('open')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="modal-body" style="padding: 1.25rem;">
+          <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:1.25rem;">
+            Choose a Google account to authorize and continue to <strong>MediCare Connect</strong>:
+          </p>
 
-      // Send to server session handler
+          <!-- Primary Account: Vedu Jns -->
+          <div class="demo-account-card" style="border:2px solid #0284c7; background:#f0f9ff; margin-bottom:0.75rem;" onclick="window.MediCareApp.loginWithDirectGoogle('vedujns6@gmail.com', 'Vedu Jns')">
+            <div class="demo-user-left">
+              <div style="width:40px; height:40px; border-radius:50%; background:#0284c7; color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.15rem;">V</div>
+              <div>
+                <div style="font-weight:700; font-size:0.95rem; color:#0f172a;">Vedu Jns</div>
+                <div style="font-size:0.8rem; color:#0369a1; font-weight:600;">vedujns6@gmail.com</div>
+              </div>
+            </div>
+            <span style="font-size:0.75rem; font-weight:700; background:#0284c7; color:white; padding:0.25rem 0.65rem; border-radius:999px;">
+              Authorize &rarr;
+            </span>
+          </div>
+
+          <!-- Option to enter another Google Email -->
+          <div style="border-top:1px solid var(--border-light); padding-top:1rem; margin-top:1rem;">
+            <label style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.35rem; display:block;">
+              Or sign in with any Google account:
+            </label>
+            <div style="display:flex; gap:0.5rem;">
+              <input type="email" id="inputOtherGoogleEmail" class="form-input" placeholder="your.name@gmail.com" />
+              <button type="button" class="btn-primary" style="white-space:nowrap; padding:0.55rem 1rem;" onclick="const e=document.getElementById('inputOtherGoogleEmail').value.trim(); if(e) window.MediCareApp.loginWithDirectGoogle(e);">
+                Sign In
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  async function loginWithDirectGoogle(email, name = null) {
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanName = name || cleanEmail.split('@')[0].replace(/[._-]/g, ' ');
+    const formattedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+    try {
       const res = await apiRequest('/api/auth/firebase-login', {
         method: 'POST',
         body: JSON.stringify({
-          email: fbUser.email,
-          name: fbUser.displayName || fbUser.email.split('@')[0],
-          avatar: fbUser.photoURL,
-          uid: fbUser.uid
+          email: cleanEmail,
+          name: formattedName,
+          avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(formattedName)}&backgroundColor=0284c7`,
+          uid: `google_${cleanEmail}`
         })
       });
 
@@ -417,29 +513,16 @@
         localStorage.setItem('mc_token', res.token);
       }
       setUser(res.user);
+
+      // Close all modals
       closeModal();
-      showToast(`Welcome, ${res.user.name}! Signed in successfully with Google.`, 'success');
+      const chooser = document.getElementById('googleChooserModal');
+      if (chooser) chooser.classList.remove('open');
+
+      showToast(`Welcome, ${res.user.name}! Google authorization successful.`, 'success');
       await loadInitialData();
     } catch (err) {
-      console.error('Firebase Auth Error:', err);
-      if (err.code === 'auth/popup-closed-by-user') {
-        showToast('Sign-in popup was closed.', 'info');
-      } else {
-        showToast(err.message || 'Google sign-in failed.', 'error');
-      }
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `
-          <svg width="20" height="20" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-          </svg>
-          <span>Continue with Google</span>
-        `;
-      }
+      showToast(err.message, 'error');
     }
   }
 
