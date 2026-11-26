@@ -173,6 +173,7 @@
     const token = localStorage.getItem('mc_token');
     if (!token) {
       clearUser();
+      await loadPublicDirectory();
       return;
     }
     try {
@@ -182,9 +183,11 @@
         await loadInitialData();
       } else {
         clearUser();
+        await loadPublicDirectory();
       }
     } catch (err) {
       clearUser();
+      await loadPublicDirectory();
     }
   }
 
@@ -629,10 +632,89 @@
       populateDepartmentFilter();
       renderDashboardStats();
       renderAppointments();
+      renderDoctorsDirectory();
     } catch (err) {
       console.error('Error loading data:', err);
       showToast('Could not load appointment data: ' + err.message, 'error');
     }
+  }
+
+  async function loadPublicDirectory() {
+    try {
+      const [deptData, docData] = await Promise.all([
+        apiRequest('/api/departments'),
+        apiRequest('/api/doctors')
+      ]);
+      state.departments = deptData.departments || [];
+      state.doctors = docData.doctors || [];
+      populateDepartmentFilter();
+      renderDoctorsDirectory();
+    } catch (err) {
+      console.error('Error loading doctors directory:', err);
+    }
+  }
+
+  function renderDoctorsDirectory() {
+    const grid = document.getElementById('doctorsDirectoryGrid');
+    const deptSelect = document.getElementById('docDeptFilter');
+    const searchInput = document.getElementById('docSearchInput');
+    if (!grid) return;
+
+    if (deptSelect && deptSelect.options.length <= 1 && state.departments.length > 0) {
+      state.departments.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = d.name;
+        deptSelect.appendChild(opt);
+      });
+    }
+
+    const deptFilter = deptSelect ? deptSelect.value : '';
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+    const filtered = state.doctors.filter(doc => {
+      const matchesDept = !deptFilter || String(doc.department_id) === String(deptFilter);
+      const matchesQuery = !query ||
+        doc.name.toLowerCase().includes(query) ||
+        (doc.department_name || '').toLowerCase().includes(query) ||
+        (doc.qualification || '').toLowerCase().includes(query) ||
+        (doc.bio || '').toLowerCase().includes(query);
+      return matchesDept && matchesQuery;
+    });
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:2rem; color:var(--text-muted);">No doctors match your search criteria.</div>`;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(doc => `
+      <article class="directory-doctor-card">
+        <div>
+          <div class="dir-doc-top">
+            <img class="dir-doc-avatar" src="${escapeHtml(doc.avatar)}" alt="${escapeHtml(doc.name)}" />
+            <div class="dir-doc-info">
+              <span class="dir-doc-specialty">${escapeHtml(doc.department_name || '')}</span>
+              <h3>${escapeHtml(doc.name)}</h3>
+              <div class="dir-doc-qual">${escapeHtml(doc.qualification)} &bull; ${doc.experience_years} yrs exp</div>
+            </div>
+          </div>
+          <p class="dir-doc-bio" style="margin-top:0.85rem;">${escapeHtml(doc.bio)}</p>
+        </div>
+        <div>
+          <div class="dir-doc-meta">
+            <span>★ ${doc.rating} (${doc.reviews_count} reviews)</span>
+            <span>Room ${escapeHtml(doc.room_number)}</span>
+            <span class="dir-doc-days">Available: ${escapeHtml(doc.available_days)}</span>
+          </div>
+          <div class="dir-doc-actions" style="margin-top:0.85rem;">
+            <span class="dir-doc-fee">\$${doc.consultation_fee} / visit</span>
+            <button type="button" class="btn-primary" style="padding:0.5rem 1rem; font-size:0.84rem;" onclick="window.MediCareApp.openBookingModal(${doc.department_id}, ${doc.id})">
+              Book Appointment
+            </button>
+          </div>
+        </div>
+      </article>
+    `).join('');
   }
 
   async function refreshAppointments() {
@@ -1650,6 +1732,16 @@
         state.deptFilter = e.target.value;
         renderAppointments();
       });
+    }
+
+    // Available Doctors Directory filters
+    const docSearchInput = document.getElementById('docSearchInput');
+    const docDeptFilter = document.getElementById('docDeptFilter');
+    if (docSearchInput) {
+      docSearchInput.addEventListener('input', () => renderDoctorsDirectory());
+    }
+    if (docDeptFilter) {
+      docDeptFilter.addEventListener('change', () => renderDoctorsDirectory());
     }
 
     // Status Tabs

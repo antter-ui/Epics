@@ -47,9 +47,15 @@
       <nav>
         <ul class="nav-links">
           <li>
-            <button class="nav-item-btn active">
+            <button class="nav-item-btn active" id="btnDashboardNav" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
               Patient Dashboard
+            </button>
+          </li>
+          <li>
+            <button class="nav-item-btn" id="btnDoctorsNav" onclick="document.getElementById('doctorsDirectorySection').scrollIntoView({behavior: 'smooth'})">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              Available Doctors
             </button>
           </li>
           <li>
@@ -222,6 +228,26 @@
       <!-- Appointments List Container -->
       <div id="appointmentsContainer" class="appointments-grid">
         <!-- Rendered dynamically by app.js -->
+      </div>
+    </section>
+
+    <!-- Available Doctors Database Directory -->
+    <section class="doctors-directory-section" id="doctorsDirectorySection" style="margin-top: 2.5rem;">
+      <div class="section-header" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:1rem; margin-bottom:1.25rem;">
+        <div>
+          <h2 style="font-size:1.35rem; font-weight:800; color:var(--text-primary); margin-bottom:0.25rem;">Available Doctors Directory</h2>
+          <p style="font-size:0.88rem; color:var(--text-muted);">Browse our live SQLite database of board-certified specialists and book an available slot.</p>
+        </div>
+        <div class="filter-controls" style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+          <input type="text" id="docSearchInput" class="search-input" placeholder="Search doctor or specialty..." style="padding:0.5rem 0.9rem; border:1px solid var(--border-light); border-radius:var(--radius-md); font-size:0.86rem; min-width:210px;" />
+          <select id="docDeptFilter" class="select-filter">
+            <option value="">All Specializations</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="doctorsDirectoryGrid" class="doctors-directory-grid">
+        <!-- Rendered dynamically by app.js from /api/doctors -->
       </div>
     </section>
 
