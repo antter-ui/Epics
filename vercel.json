@@ -3,8 +3,14 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "functions": {
-    "api/[...path].js": {
+    "api/server.js": {
       "includeFiles": "{data/healthcare.db,public/firebase-config.js}"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/server?__apiPath=$1"
+    }
+  ]
 }
