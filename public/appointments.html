@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Appointments – The Practitioner Medical Clinic</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/design-system/tokens.css" />
+  <link rel="stylesheet" href="/design-system/components.css" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <div id="siteHeader"></div>
+  <div id="portalSubnav"></div>
+
+  <main class="tp-section" style="padding-top:48px;">
+    <div class="tp-container">
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:20px; margin-bottom:28px;">
+        <div>
+          <h1 style="font-size:clamp(36px, 4vw, 52px);">My Appointments</h1>
+          <p style="margin-top:8px;">Filter your medical visits, inspect diagnosis summaries, export to Google Calendar, or cancel upcoming slots.</p>
+        </div>
+        <a href="/book.html" class="tp-btn tp-btn--accent tp-btn--sm">New Appointment</a>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-bottom:14px;">
+        <div class="tp-filter-tabs" id="aptTimeframeTabs" style="margin-bottom:0;">
+          <button type="button" class="tp-filter-tab is-active" data-timeframe="all">All Visits (<span id="tf-all">0</span>)</button>
+          <button type="button" class="tp-filter-tab" data-timeframe="upcoming">Upcoming (<span id="tf-upcoming">0</span>)</button>
+          <button type="button" class="tp-filter-tab" data-timeframe="previous">Previous (<span id="tf-previous">0</span>)</button>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+        <div class="tp-filter-tabs" id="aptStatusTabs" style="margin-bottom:0;">
+          <button type="button" class="tp-filter-tab is-active" data-status="All">All (<span id="cnt-All">0</span>)</button>
+          <button type="button" class="tp-filter-tab" data-status="Confirmed">Confirmed (<span id="cnt-Confirmed">0</span>)</button>
+          <button type="button" class="tp-filter-tab" data-status="Pending">Pending (<span id="cnt-Pending">0</span>)</button>
+          <button type="button" class="tp-filter-tab" data-status="Completed">Completed (<span id="cnt-Completed">0</span>)</button>
+          <button type="button" class="tp-filter-tab" data-status="Cancelled">Cancelled (<span id="cnt-Cancelled">0</span>)</button>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; flex:1 1 280px; justify-content:flex-end;">
+          <input id="aptSearch" type="search" class="tp-input" placeholder="Search doctor, ref, issue..." style="width:100%; max-width:240px; flex:1 1 180px;" aria-label="Search appointments" />
+          <select id="aptDeptFilter" class="tp-select" style="width:100%; max-width:220px; flex:1 1 180px;" aria-label="Filter by department">
+            <option value="">All Departments</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="aptsSectionsWrap"></div>
+    </div>
+  </main>
+
+  <!-- Details / Cancel Modal -->
+  <div class="tp-modal-backdrop" id="aptModalBackdrop">
+    <div class="tp-modal-card" id="aptModalBody"></div>
+  </div>
+
+  <div id="siteFooter"></div>
+
+  <script src="/design-system/components.js"></script>
+  <script src="/js/portal-core.js"></script>
+  <script>
+    (async function () {
+      const user = await window.PortalCore.mountLayout({ activePath: '/appointments.html', requireUser: true });
+      if (!user) return;
+      document.getElementById('portalSubnav').innerHTML = window.PortalCore.renderPortalSubnav('/appointments.html', user);
+
+      let appointments = [];
+      let departments = [];
+      let activeStatus = 'All';
+      let activeTimeframe = 'all';
+
+      function isUpcomingApt(a) {
+        if (typeof a.is_upcoming === 'boolean') return a.is_upcoming;
+        const d = new Date();
+        const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        return (a.status === 'Confirmed' || a.status === 'Pending') && a.appointment_date >= today;
+      }
+
+      async function loadData() {
+        const [deptRes, aptRes] = await Promise.all([
+          window.PortalCore.apiRequest('/api/departments'),
+          window.PortalCore.apiRequest('/api/appointments')
+        ]);
+        departments = deptRes.departments || [];
+        appointments = aptRes.appointments || [];
+
+        const deptSel = document.getElementById('aptDeptFilter');
+        if (deptSel.options.length <= 1) {
+          departments.forEach(d => {
+            const o = document.createElement('option');
+            o.value = d.id;
+            o.textContent = d.name;
+            deptSel.appendChild(o);
+          });
+        }
+        renderList();
+      }
+
+      function updateCounts() {
+        const upcomingCount = appointments.filter(isUpcomingApt).length;
+        const previousCount = appointments.length - upcomingCount;
+        document.getElementById('tf-all').textContent = appointments.length;
+        document.getElementById('tf-upcoming').textContent = upcomingCount;
+        document.getElementById('tf-previous').textContent = previousCount;
+
+        ['All', 'Confirmed', 'Pending', 'Completed', 'Cancelled'].forEach(st => {
+          const el = document.getElementById(`cnt-${st}`);
+          if (el) el.textContent = st === 'All' ? appointments.length : appointments.filter(a => a.status === st).length;
+        });
+      }
+
+      function renderCard(a) {
+        const canCancel = typeof a.is_cancellable === 'boolean' ? a.is_cancellable : isUpcomingApt(a);
+        return `
+          <article class="tp-card tp-card--bordered">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+              <div style="display:flex; gap:14px; align-items:center;">
+                <img src="${window.PortalCore.esc(a.doctor_avatar)}" alt="${window.PortalCore.esc(a.doctor_name)}" width="54" height="54" style="border-radius:50%; object-fit:cover;" />
+                <div>
+                  <div style="font-size:14px; color:var(--tp-color-primary); font-weight:500;">${window.PortalCore.esc(a.department_name)}</div>
+                  <h3 style="font-size:21px;">${window.PortalCore.esc(a.doctor_name)}</h3>
+                </div>
+              </div>
+              <span class="tp-status-badge tp-status--${a.status.toLowerCase()}">${window.PortalCore.esc(a.status)}</span>
+            </div>
+            <div style="margin-top:16px; font-size:16px; display:grid; gap:6px;">
+              <div><strong>Date &amp; Time:</strong> ${window.PortalCore.formatDate(a.appointment_date)} at ${window.PortalCore.esc(a.time_slot)}</div>
+              <div><strong>Room &amp; Fee:</strong> ${window.PortalCore.esc(a.doctor_room)} &bull; $${window.PortalCore.esc(a.consultation_fee)}</div>
+              <div><strong>Concern:</strong> ${window.PortalCore.esc(a.medical_issue)}</div>
+              ${a.doctor_notes ? `<div style="background:var(--tp-color-alternate); padding:10px 14px; border-radius:8px; margin-top:6px;"><strong>Doctor Notes:</strong> ${window.PortalCore.esc(a.doctor_notes)}</div>` : ''}
+            </div>
+            <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--tp-color-border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <span style="font-family:monospace; font-size:14px; color:var(--tp-color-tertiary);">${window.PortalCore.esc(a.reference_code)}</span>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button type="button" class="tp-btn tp-btn--outline tp-btn--sm" style="padding:7px 14px; font-size:14px;" data-details="${a.id}">Details</button>
+                <button type="button" class="tp-btn tp-btn--outline tp-btn--sm" style="padding:7px 14px; font-size:14px;" data-print="${a.id}">Print Slip</button>
+                ${canCancel ? `<button type="button" class="tp-btn tp-btn--outline tp-btn--sm" style="padding:7px 14px; font-size:14px; color:#8c2626; border-color:#f1c3c3;" data-cancel="${a.id}">Cancel</button>` : ''}
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
+      function renderList() {
+        updateCounts();
+        const q = document.getElementById('aptSearch').value.trim().toLowerCase();
+        const dId = document.getElementById('aptDeptFilter').value;
+
+        const filtered = appointments.filter(a => {
+          const up = isUpcomingApt(a);
+          const matchTimeframe =
+            activeTimeframe === 'all' ||
+            (activeTimeframe === 'upcoming' && up) ||
+            (activeTimeframe === 'previous' && !up);
+          const matchStatus = activeStatus === 'All' || a.status === activeStatus;
+          const matchDept = !dId || String(a.department_id) === String(dId);
+          const matchQ = !q ||
+            a.doctor_name.toLowerCase().includes(q) ||
+            a.medical_issue.toLowerCase().includes(q) ||
+            (a.reference_code || '').toLowerCase().includes(q);
+          return matchTimeframe && matchStatus && matchDept && matchQ;
+        });
+
+        const wrap = document.getElementById('aptsSectionsWrap');
+        if (!filtered.length) {
+          wrap.innerHTML = `
+            <div class="tp-card tp-card--cream" style="text-align:center; padding:44px;">
+              <h2 style="font-size:24px;">No Appointments Found</h2>
+              <p style="margin-top:8px;">Try clearing your filters or book a new specialist consultation.</p>
+              <a href="/book.html" class="tp-btn tp-btn--accent tp-btn--sm" style="margin-top:12px;">Book Appointment</a>
+            </div>
+          `;
+          return;
+        }
+
+        const upcomingList = filtered.filter(isUpcomingApt);
+        const previousList = filtered.filter(a => !isUpcomingApt(a));
+        let html = '';
+
+        if (activeTimeframe !== 'previous' && upcomingList.length) {
+          html += `
+            <section style="margin-bottom:36px;">
+              <h2 style="font-size:24px; margin-bottom:16px;">Upcoming Appointments (${upcomingList.length})</h2>
+              <div class="tp-apt-grid">${upcomingList.map(renderCard).join('')}</div>
+            </section>
+          `;
+        }
+
+        if (activeTimeframe !== 'upcoming' && previousList.length) {
+          html += `
+            <section>
+              <h2 style="font-size:24px; margin-bottom:16px;">Previous Appointments (${previousList.length})</h2>
+              <div class="tp-apt-grid">${previousList.map(renderCard).join('')}</div>
+            </section>
+          `;
+        }
+
+        wrap.innerHTML = html;
+        wrap.querySelectorAll('[data-details]').forEach(b => b.addEventListener('click', () => openDetails(Number(b.getAttribute('data-details')))));
+        wrap.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => window.PortalCore.printAppointmentSlip(appointments.find(x => x.id === Number(b.getAttribute('data-print'))))));
+        wrap.querySelectorAll('[data-cancel]').forEach(b => b.addEventListener('click', () => openCancel(Number(b.getAttribute('data-cancel')))));
+      }
+
+      const backdrop = document.getElementById('aptModalBackdrop');
+      const modalBody = document.getElementById('aptModalBody');
+      function closeModal() { backdrop.classList.remove('is-open'); }
+      backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+
+      async function openDetails(id) {
+        let a = appointments.find(x => x.id === id);
+        if (!a) return;
+        try {
+          const fresh = await window.PortalCore.apiRequest(`/api/appointments/${id}`);
+          if (fresh && fresh.appointment) a = fresh.appointment;
+        } catch (e) { /* use cached card data if fetch fails */ }
+
+        const canCancel = typeof a.is_cancellable === 'boolean' ? a.is_cancellable : isUpcomingApt(a);
+        modalBody.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <h2>Appointment Details</h2>
+            <button type="button" class="tp-icon-btn" id="mCloseBtn">&times;</button>
+          </div>
+          <div class="tp-card tp-card--cream" style="margin-bottom:18px; display:grid; gap:6px;">
+            <div><strong>Reference:</strong> ${window.PortalCore.esc(a.reference_code)}</div>
+            <div><strong>Patient:</strong> ${window.PortalCore.esc(a.patient_name)} (${window.PortalCore.esc(a.patient_email)})${a.patient_phone ? ' &bull; ' + window.PortalCore.esc(a.patient_phone) : ''}</div>
+            <div><strong>Doctor:</strong> ${window.PortalCore.esc(a.doctor_name)} (${window.PortalCore.esc(a.department_name)})</div>
+            ${a.doctor_qualification ? `<div><strong>Qualification:</strong> ${window.PortalCore.esc(a.doctor_qualification)}</div>` : ''}
+            <div><strong>Schedule:</strong> ${window.PortalCore.formatDate(a.appointment_date)} at ${window.PortalCore.esc(a.time_slot)}</div>
+            <div><strong>Room:</strong> ${window.PortalCore.esc(a.doctor_room)} &bull; Fee: $${window.PortalCore.esc(a.consultation_fee)}</div>
+            <div><strong>Status:</strong> <span class="tp-status-badge tp-status--${a.status.toLowerCase()}">${window.PortalCore.esc(a.status)}</span></div>
+            ${a.created_at ? `<div><strong>Booked On:</strong> ${new Date(a.created_at).toLocaleString()}</div>` : ''}
+          </div>
+          <p><strong>Medical Issue:</strong> ${window.PortalCore.esc(a.medical_issue)}</p>
+          ${a.description ? `<p><strong>Additional Notes:</strong> ${window.PortalCore.esc(a.description)}</p>` : ''}
+          ${a.doctor_notes ? `<p><strong>Physician Notes:</strong> ${window.PortalCore.esc(a.doctor_notes)}</p>` : ''}
+          ${a.cancellation_reason ? `<p><strong>Cancellation Reason:</strong> ${window.PortalCore.esc(a.cancellation_reason)}</p>` : ''}
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:20px;">
+            <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" id="mCalBtn">Google Calendar</button>
+            <button type="button" class="tp-btn tp-btn--outline tp-btn--sm" id="mPrintBtn">Print Slip</button>
+            ${canCancel ? `<button type="button" class="tp-btn tp-btn--outline tp-btn--sm" style="color:#8c2626; border-color:#f1c3c3;" id="mCancelBtn">Cancel Appointment</button>` : ''}
+          </div>
+        `;
+        backdrop.classList.add('is-open');
+        document.getElementById('mCloseBtn').addEventListener('click', closeModal);
+        document.getElementById('mCalBtn').addEventListener('click', () => window.PortalCore.addToGoogleCalendar(a));
+        document.getElementById('mPrintBtn').addEventListener('click', () => window.PortalCore.printAppointmentSlip(a));
+        const mCancel = document.getElementById('mCancelBtn');
+        if (mCancel) mCancel.addEventListener('click', () => openCancel(a.id));
+      }
+
+      function openCancel(id) {
+        const a = appointments.find(x => x.id === id);
+        if (!a) return;
+        modalBody.innerHTML = `
+          <h2>Cancel Appointment?</h2>
+          <p style="margin-top:8px;">Cancel your visit with <strong>${window.PortalCore.esc(a.doctor_name)}</strong> on ${window.PortalCore.formatDate(a.appointment_date)} at ${window.PortalCore.esc(a.time_slot)}?</p>
+          <div class="tp-field" style="margin:18px 0;">
+            <label class="tp-label" for="cReasonInput">Reason (Optional)</label>
+            <input id="cReasonInput" type="text" class="tp-input" placeholder="Schedule conflict, rescheduling..." />
+          </div>
+          <div style="display:flex; gap:12px; justify-content:flex-end;">
+            <button type="button" class="tp-btn tp-btn--outline tp-btn--sm" id="cBackBtn">Keep Visit</button>
+            <button type="button" class="tp-btn tp-btn--primary tp-btn--sm" style="background:#8c2626; border-color:#8c2626;" id="cConfirmBtn">Confirm Cancel</button>
+          </div>
+        `;
+        backdrop.classList.add('is-open');
+        document.getElementById('cBackBtn').addEventListener('click', closeModal);
+        document.getElementById('cConfirmBtn').addEventListener('click', async () => {
+          const reason = document.getElementById('cReasonInput').value.trim() || 'Cancelled by patient';
+          try {
+            await window.PortalCore.apiRequest(`/api/appointments/${id}/cancel`, {
+              method: 'POST',
+              body: JSON.stringify({ reason })
+            });
+            closeModal();
+            window.PortalCore.showToast('Appointment cancelled.', 'success');
+            await loadData();
+          } catch (err) {
+            window.PortalCore.showToast(err.message, 'error');
+          }
+        });
+      }
+
+      document.querySelectorAll('#aptTimeframeTabs .tp-filter-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#aptTimeframeTabs .tp-filter-tab').forEach(b => b.classList.remove('is-active'));
+          btn.classList.add('is-active');
+          activeTimeframe = btn.getAttribute('data-timeframe');
+          renderList();
+        });
+      });
+
+      document.querySelectorAll('#aptStatusTabs .tp-filter-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#aptStatusTabs .tp-filter-tab').forEach(b => b.classList.remove('is-active'));
+          btn.classList.add('is-active');
+          activeStatus = btn.getAttribute('data-status');
+          renderList();
+        });
+      });
+      document.getElementById('aptSearch').addEventListener('input', renderList);
+      document.getElementById('aptDeptFilter').addEventListener('change', renderList);
+      await loadData();
+    })();
+  </script>
+</body>
+</html>

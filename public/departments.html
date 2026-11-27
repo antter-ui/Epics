@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Medical Departments – The Practitioner Medical Clinic</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/design-system/tokens.css" />
+  <link rel="stylesheet" href="/design-system/components.css" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <div id="siteHeader"></div>
+
+  <main>
+    <section class="tp-page-banner">
+      <img src="/assets/backgrounds/hero-curve-line.svg" alt="" class="tp-hero__curve" />
+      <div class="tp-container tp-page-banner__inner">
+        <div class="tp-breadcrumb"><a href="/index.html">Home</a> <span>/</span> <span>Medical Departments</span></div>
+        <h1>Medical Departments</h1>
+        <p class="tp-section-heading__subtitle" style="margin-top:16px;">
+          Six specialized departments staffed by board-certified physicians. Choose a department to view specialists or reserve a visit.
+        </p>
+      </div>
+    </section>
+
+    <section class="tp-section">
+      <div class="tp-container">
+        <div class="tp-services-grid" id="departmentsGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="/design-system/components.js"></script>
+  <script src="/js/portal-core.js"></script>
+  <script>
+    (async function () {
+      await window.PortalCore.mountLayout({ activePath: '/departments.html' });
+      const data = await window.PortalCore.apiRequest('/api/departments');
+      const departments = (data.departments || []).map(window.PortalCore.enrichDepartment);
+      document.getElementById('departmentsGrid').innerHTML = departments.map(d =>
+        window.PractitionerUI.renderServiceCard(
+          { ...d, tagline: `${d.doctor_count || 2} Specialists Available` },
+          {
+            ctaLabel: 'Book in Department →',
+            onSelect: `window.location.href='/book.html?departmentId=${d.id}'`
+          }
+        )
+      ).join('');
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Our Doctors – The Practitioner Medical Clinic</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/design-system/tokens.css" />
+  <link rel="stylesheet" href="/design-system/components.css" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <div id="siteHeader"></div>
+
+  <main>
+    <section class="tp-page-banner">
+      <img src="/assets/backgrounds/hero-curve-line.svg" alt="" class="tp-hero__curve" />
+      <div class="tp-container tp-page-banner__inner">
+        <div class="tp-breadcrumb"><a href="/index.html">Home</a> <span>/</span> <span>Our Doctors</span></div>
+        <h1>Our Medical Specialists</h1>
+        <p class="tp-section-heading__subtitle" style="margin-top:16px;">
+          Browse all twelve board-certified physicians across our clinic directory and book directly into an open time slot.
+        </p>
+      </div>
+    </section>
+
+    <section class="tp-section">
+      <div class="tp-container">
+        <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between; margin-bottom:36px;">
+          <input id="docFilterQuery" type="search" class="tp-input" placeholder="Search doctor, specialty, or qualification..." style="max-width:380px;" aria-label="Search doctors" />
+          <select id="docFilterDept" class="tp-select" style="max-width:260px;" aria-label="Filter by department">
+            <option value="">All Departments</option>
+          </select>
+        </div>
+
+        <div class="tp-doctors-grid" id="doctorsPageGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="/design-system/components.js"></script>
+  <script src="/js/portal-core.js"></script>
+  <script>
+    (async function () {
+      await window.PortalCore.mountLayout({ activePath: '/doctors.html' });
+
+      const params = new URLSearchParams(window.location.search);
+      const qInput = document.getElementById('docFilterQuery');
+      const dSelect = document.getElementById('docFilterDept');
+      if (params.get('q')) qInput.value = params.get('q');
+
+      const [deptData, docData] = await Promise.all([
+        window.PortalCore.apiRequest('/api/departments'),
+        window.PortalCore.apiRequest('/api/doctors')
+      ]);
+
+      const departments = deptData.departments || [];
+      const doctors = docData.doctors || [];
+
+      departments.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = d.name;
+        dSelect.appendChild(opt);
+      });
+      if (params.get('departmentId')) dSelect.value = params.get('departmentId');
+
+      function render() {
+        const q = qInput.value.trim().toLowerCase();
+        const deptId = dSelect.value;
+        const list = doctors.filter(doc => {
+          const matchDept = !deptId || String(doc.department_id) === String(deptId);
+          const matchQ = !q ||
+            doc.name.toLowerCase().includes(q) ||
+            (doc.department_name || '').toLowerCase().includes(q) ||
+            (doc.qualification || '').toLowerCase().includes(q) ||
+            (doc.bio || '').toLowerCase().includes(q);
+          return matchDept && matchQ;
+        });
+
+        const grid = document.getElementById('doctorsPageGrid');
+        if (!list.length) {
+          grid.innerHTML = '<div class="tp-card tp-card--cream" style="grid-column:1/-1; text-align:center;">No specialists match your search filter.</div>';
+          return;
+        }
+        grid.innerHTML = list.map(doc =>
+          window.PractitionerUI.renderDoctorCard(doc, {
+            ctaLabel: 'Book Consultation',
+            onBook: `window.location.href='/book.html?departmentId=${doc.department_id}&doctorId=${doc.id}'`
+          })
+        ).join('');
+      }
+
+      qInput.addEventListener('input', render);
+      dSelect.addEventListener('change', render);
+      render();
+    })();
+  </script>
+</body>
+</html>

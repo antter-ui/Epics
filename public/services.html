@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clinical Services – The Practitioner Medical Clinic</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/design-system/tokens.css" />
+  <link rel="stylesheet" href="/design-system/components.css" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <div id="siteHeader"></div>
+
+  <main>
+    <section class="tp-page-banner">
+      <img src="/assets/backgrounds/hero-curve-line.svg" alt="" class="tp-hero__curve" />
+      <div class="tp-container tp-page-banner__inner">
+        <div class="tp-breadcrumb"><a href="/index.html">Home</a> <span>/</span> <span>Services</span></div>
+        <h1>Clinical Services &amp; Treatments</h1>
+        <p class="tp-section-heading__subtitle" style="margin-top:16px;">
+          Evidence-based diagnostics, preventive checkups, and targeted medical programs tailored to your symptoms.
+        </p>
+      </div>
+    </section>
+
+    <section class="tp-section">
+      <div class="tp-container tp-split" style="margin-bottom:80px;">
+        <div style="border-radius:var(--tp-radius-leaf); overflow:hidden; border:1px solid var(--tp-color-border); aspect-ratio:680/580;">
+          <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=680&h=580&fit=crop" alt="Specialist medical consultation" style="width:100%; height:100%; object-fit:cover;" />
+        </div>
+        <div>
+          <h2>None of your symptoms are random. Let’s uncover the real cause.</h2>
+          <p style="margin-top:18px;">
+            Whether you are managing cardiovascular risk, recurring skin flare-ups, joint pain, or chronic migraines, our clinicians map diagnostics and treatment steps clearly.
+          </p>
+          <a href="/book.html" class="tp-btn tp-btn--accent" style="margin-top:12px;">Book a Consultation</a>
+        </div>
+      </div>
+
+      <div class="tp-container">
+        <div class="tp-services-grid" id="servicesPageGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="/design-system/components.js"></script>
+  <script src="/js/portal-core.js"></script>
+  <script>
+    (async function () {
+      await window.PortalCore.mountLayout({ activePath: '/services.html' });
+      const data = await window.PortalCore.apiRequest('/api/departments');
+      const departments = (data.departments || []).map(window.PortalCore.enrichDepartment);
+      document.getElementById('servicesPageGrid').innerHTML = departments.map(d =>
+        window.PractitionerUI.renderServiceCard(d, {
+          ctaLabel: 'Schedule Service →',
+          onSelect: `window.location.href='/book.html?departmentId=${d.id}'`
+        })
+      ).join('');
+    })();
+  </script>
+</body>
+</html>

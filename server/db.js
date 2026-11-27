@@ -21,6 +21,39 @@ function hashPassword(password, salt) {
   return crypto.scryptSync(password, salt, 64).toString('hex');
 }
 
+function getLocalTodayStr(now = new Date()) {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function parseCalendarDate(dateStr) {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) {
+    return null;
+  }
+  return dt;
+}
+
+const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function getWeekdayName(dateObj) {
+  return WEEKDAY_NAMES[dateObj.getDay()];
+}
+
+function isSlotElapsedToday(timeSlot, now = new Date()) {
+  const [timePart, meridiem] = timeSlot.split(' ');
+  let [hours, minutes] = timePart.split(':').map(Number);
+  if (meridiem === 'PM' && hours !== 12) hours += 12;
+  if (meridiem === 'AM' && hours === 12) hours = 0;
+  return hours * 60 + minutes <= now.getHours() * 60 + now.getMinutes() + 15;
+}
+
+const USER_PUBLIC_COLUMNS = 'id, google_id, email, name, avatar, auth_provider, phone, emergency_contact, allergies, role, created_at, updated_at';
+
 function initDatabase() {
   // 1. Users table (Supports real email/password authentication & Google OAuth)
   db.exec(`
@@ -32,14 +65,31 @@ function initDatabase() {
       password_salt TEXT,
       name TEXT NOT NULL,
       avatar TEXT,
+      auth_provider TEXT NOT NULL DEFAULT 'email',
+      phone TEXT,
+      emergency_contact TEXT,
+      allergies TEXT,
       role TEXT DEFAULT 'patient',
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      updated_at TEXT
     );
   `);
 
   // Run column migrations for existing databases
   try { db.exec('ALTER TABLE users ADD COLUMN password_hash TEXT;'); } catch (e) {}
   try { db.exec('ALTER TABLE users ADD COLUMN password_salt TEXT;'); } catch (e) {}
+  try { db.exec("ALTER TABLE users ADD COLUMN auth_provider TEXT DEFAULT 'email';"); } catch (e) {}
+  try { db.exec('ALTER TABLE users ADD COLUMN phone TEXT;'); } catch (e) {}
+  try { db.exec('ALTER TABLE users ADD COLUMN emergency_contact TEXT;'); } catch (e) {}
+  try { db.exec('ALTER TABLE users ADD COLUMN allergies TEXT;'); } catch (e) {}
+  try { db.exec('ALTER TABLE users ADD COLUMN updated_at TEXT;'); } catch (e) {}
+  try {
+    db.exec(`
+      UPDATE users
+      SET auth_provider = CASE WHEN google_id IS NOT NULL AND google_id != '' THEN 'google' ELSE 'email' END
+      WHERE auth_provider IS NULL OR auth_provider = '';
+    `);
+  } catch (e) {}
 
   // 2. Sessions table
   db.exec(`
@@ -111,6 +161,20 @@ function initDatabase() {
       FOREIGN KEY (doctor_id) REFERENCES doctors(id)
     );
   `);
+
+  // Enforce atomic database-level uniqueness for active doctor slots and patient slots
+  try {
+    db.exec(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_active_doctor_slot
+      ON appointments (doctor_id, appointment_date, time_slot)
+      WHERE status != 'Cancelled';
+    `);
+    db.exec(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_active_patient_slot
+      ON appointments (user_id, appointment_date, time_slot)
+      WHERE status != 'Cancelled';
+    `);
+  } catch (e) {}
 
   seedInitialData();
 }
@@ -206,11 +270,11 @@ module.exports = {
 
   // Users
   getUserById(id) {
-    return db.prepare('SELECT id, google_id, email, name, avatar, role, created_at FROM users WHERE id = ?').get(id);
+    return db.prepare(`SELECT ${USER_PUBLIC_COLUMNS} FROM users WHERE id = ?`).get(id);
   },
 
   getUserByGoogleId(googleId) {
-    return db.prepare('SELECT id, google_id, email, name, avatar, role, created_at FROM users WHERE google_id = ?').get(googleId);
+    return db.prepare(`SELECT ${USER_PUBLIC_COLUMNS} FROM users WHERE google_id = ?`).get(googleId);
   },
 
   getUserByEmail(email) {
@@ -231,8 +295,9 @@ module.exports = {
         // User previously logged in with Google, attach password
         const salt = crypto.randomBytes(16).toString('hex');
         const hash = hashPassword(password, salt);
-        db.prepare('UPDATE users SET password_hash = ?, password_salt = ?, name = ? WHERE id = ?')
-          .run(hash, salt, cleanName, existing.id);
+        const now = new Date().toISOString();
+        db.prepare('UPDATE users SET password_hash = ?, password_salt = ?, name = ?, updated_at = ? WHERE id = ?')
+          .run(hash, salt, cleanName, now, existing.id);
         return this.getUserById(existing.id);
       }
     }
@@ -241,12 +306,12 @@ module.exports = {
     const hash = hashPassword(password, salt);
     const id = 'usr_' + crypto.randomBytes(8).toString('hex');
     const now = new Date().toISOString();
-    const avatar = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}&backgroundColor=0284c7`;
+    const avatar = '/assets/icons/patient-avatar.svg';
 
     db.prepare(`
-      INSERT INTO users (id, email, password_hash, password_salt, name, avatar, role, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, 'patient', ?)
-    `).run(id, cleanEmail, hash, salt, cleanName, avatar, now);
+      INSERT INTO users (id, email, password_hash, password_salt, name, avatar, auth_provider, role, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, 'email', 'patient', ?, ?)
+    `).run(id, cleanEmail, hash, salt, cleanName, avatar, now, now);
 
     return this.getUserById(id);
   },
@@ -274,21 +339,65 @@ module.exports = {
   // Real Google OAuth upsert
   upsertGoogleUser({ googleId, email, name, avatar }) {
     const cleanEmail = email.toLowerCase().trim();
+    const now = new Date().toISOString();
     let user = this.getUserByGoogleId(googleId) || this.getUserByEmail(cleanEmail);
     if (user) {
       db.prepare(`
-        UPDATE users SET name = ?, avatar = ?, google_id = ? WHERE id = ?
-      `).run(name, avatar || user.avatar, googleId, user.id);
+        UPDATE users SET name = ?, avatar = ?, google_id = ?, auth_provider = 'google', updated_at = ? WHERE id = ?
+      `).run(name, avatar || user.avatar, googleId, now, user.id);
       return this.getUserById(user.id);
     } else {
       const id = 'usr_' + crypto.randomBytes(8).toString('hex');
-      const now = new Date().toISOString();
       db.prepare(`
-        INSERT INTO users (id, google_id, email, name, avatar, role, created_at)
-        VALUES (?, ?, ?, ?, ?, 'patient', ?)
-      `).run(id, googleId, cleanEmail, name, avatar, now);
+        INSERT INTO users (id, google_id, email, name, avatar, auth_provider, role, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, 'google', 'patient', ?, ?)
+      `).run(id, googleId, cleanEmail, name, avatar || '/assets/icons/patient-avatar.svg', now, now);
       return this.getUserById(id);
     }
+  },
+
+  // Update persisted basic patient profile information
+  updateUserProfile(userId, { name, phone, emergency_contact, allergies }) {
+    const existing = this.getUserById(userId);
+    if (!existing) {
+      throw new Error('Patient account not found.');
+    }
+
+    const cleanName = typeof name === 'string' ? name.trim() : existing.name;
+    if (!cleanName || cleanName.length < 2 || cleanName.length > 100) {
+      throw new Error('Full name must be between 2 and 100 characters.');
+    }
+
+    const cleanPhone = phone != null ? String(phone).trim() : '';
+    if (cleanPhone && !/^[+\d\s().-]{5,30}$/.test(cleanPhone)) {
+      throw new Error('Please enter a valid phone number (5–30 digits/characters).');
+    }
+
+    const cleanEmergency = emergency_contact != null ? String(emergency_contact).trim() : '';
+    if (cleanEmergency.length > 160) {
+      throw new Error('Emergency contact must be 160 characters or fewer.');
+    }
+
+    const cleanAllergies = allergies != null ? String(allergies).trim() : '';
+    if (cleanAllergies.length > 1000) {
+      throw new Error('Medical notes / allergies must be 1000 characters or fewer.');
+    }
+
+    const now = new Date().toISOString();
+    db.prepare(`
+      UPDATE users
+      SET name = ?, phone = ?, emergency_contact = ?, allergies = ?, updated_at = ?
+      WHERE id = ?
+    `).run(
+      cleanName,
+      cleanPhone || null,
+      cleanEmergency || null,
+      cleanAllergies || null,
+      now,
+      userId
+    );
+
+    return this.getUserById(userId);
   },
 
   // Sessions
@@ -342,7 +451,7 @@ module.exports = {
   // Doctors
   getDoctors(departmentId = null) {
     let sql = `
-      SELECT doc.*, d.name AS department_name, d.slug AS department_slug, d.color AS department_color
+      SELECT doc.*, d.name AS department_name, d.name AS specialization, d.slug AS department_slug, d.color AS department_color
       FROM doctors doc
       JOIN departments d ON doc.department_id = d.id
     `;
@@ -357,7 +466,7 @@ module.exports = {
 
   getDoctorById(id) {
     return db.prepare(`
-      SELECT doc.*, d.name AS department_name, d.slug AS department_slug, d.color AS department_color
+      SELECT doc.*, d.name AS department_name, d.name AS specialization, d.slug AS department_slug, d.color AS department_color
       FROM doctors doc
       JOIN departments d ON doc.department_id = d.id
       WHERE doc.id = ?
@@ -371,6 +480,15 @@ module.exports = {
       throw new Error('Doctor not found');
     }
 
+    const parsedDate = parseCalendarDate(dateStr);
+    if (!parsedDate) {
+      throw new Error('Invalid calendar date. Expected a real date in YYYY-MM-DD format.');
+    }
+
+    const weekday = getWeekdayName(parsedDate);
+    const availableDays = (doctor.available_days || '').split(',').map(s => s.trim()).filter(Boolean);
+    const isDoctorOnDuty = availableDays.length === 0 || availableDays.includes(weekday);
+
     // Find active booked appointments for this doctor on this date
     const bookedAppointments = db.prepare(`
       SELECT id, time_slot, status, patient_name 
@@ -383,31 +501,24 @@ module.exports = {
       bookedSlotMap.set(b.time_slot, b);
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    const isToday = (dateStr === todayStr);
-
     const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const todayStr = getLocalTodayStr(now);
+    const isPastDate = dateStr < todayStr;
+    const isToday = dateStr === todayStr;
 
     const slots = ALL_TIME_SLOTS.map(slot => {
       const isBooked = bookedSlotMap.has(slot);
-      let isPast = false;
+      let isPast = isPastDate;
 
-      if (isToday) {
-        const [timePart, meridiem] = slot.split(' ');
-        let [hours, minutes] = timePart.split(':').map(Number);
-        if (meridiem === 'PM' && hours !== 12) hours += 12;
-        if (meridiem === 'AM' && hours === 12) hours = 0;
-        const slotMinutes = hours * 60 + minutes;
-
-        if (slotMinutes <= currentMinutes + 15) {
-          isPast = true;
-        }
+      if (!isPast && isToday) {
+        isPast = isSlotElapsedToday(slot, now);
       }
 
-      const isAvailable = !isBooked && !isPast;
+      const isAvailable = isDoctorOnDuty && !isBooked && !isPast;
       let reason = 'Available';
-      if (isBooked) reason = 'Already Booked';
+      if (isPastDate) reason = 'Date Has Passed';
+      else if (!isDoctorOnDuty) reason = 'Doctor Off Duty';
+      else if (isBooked) reason = 'Already Booked';
       else if (isPast) reason = 'Slot Has Passed';
 
       return {
@@ -420,11 +531,28 @@ module.exports = {
     return {
       doctor,
       date: dateStr,
+      weekday,
+      is_doctor_available: isDoctorOnDuty,
       slots
     };
   },
 
   // Appointments (Strictly Scoped to Current Authenticated Patient)
+  decorateAppointment(apt, now = new Date()) {
+    if (!apt) return apt;
+    const todayStr = getLocalTodayStr(now);
+    const isPast =
+      apt.appointment_date < todayStr ||
+      (apt.appointment_date === todayStr && isSlotElapsedToday(apt.time_slot, now));
+    const isUpcoming = (apt.status === 'Confirmed' || apt.status === 'Pending') && !isPast;
+    return {
+      ...apt,
+      is_upcoming: isUpcoming,
+      is_previous: !isUpcoming,
+      is_cancellable: isUpcoming
+    };
+  },
+
   getUserAppointments(userId, statusFilter = null) {
     let sql = `
       SELECT 
@@ -451,7 +579,8 @@ module.exports = {
     }
 
     sql += ' ORDER BY a.appointment_date DESC, a.time_slot DESC';
-    return db.prepare(sql).all(...params);
+    const now = new Date();
+    return db.prepare(sql).all(...params).map(a => this.decorateAppointment(a, now));
   },
 
   getAppointmentById(id, userId) {
@@ -473,10 +602,11 @@ module.exports = {
       JOIN doctors doc ON a.doctor_id = doc.id
       WHERE a.id = ? AND a.user_id = ?
     `;
-    return db.prepare(sql).get(id, userId);
+    const row = db.prepare(sql).get(id, userId);
+    return row ? this.decorateAppointment(row) : row;
   },
 
-  // Atomic Slot Booking with Collision Check
+  // Atomic Slot Booking with Collision & Schedule Checks
   createAppointment({
     userId,
     patientName,
@@ -499,9 +629,25 @@ module.exports = {
       throw new Error(`Invalid time slot: ${timeSlot}`);
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const parsedDate = parseCalendarDate(appointmentDate);
+    if (!parsedDate) {
+      throw new Error('Invalid calendar date selected.');
+    }
+
+    const weekday = getWeekdayName(parsedDate);
+    const availableDays = (doctor.available_days || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (availableDays.length > 0 && !availableDays.includes(weekday)) {
+      throw new Error(`${doctor.name} is not available on ${weekday}s. Available days: ${doctor.available_days}.`);
+    }
+
+    const now = new Date();
+    const todayStr = getLocalTodayStr(now);
     if (appointmentDate < todayStr) {
       throw new Error('Appointment date cannot be in the past.');
+    }
+
+    if (appointmentDate === todayStr && isSlotElapsedToday(timeSlot, now)) {
+      throw new Error(`This time slot (${timeSlot}) has already passed for today. Please choose a later slot.`);
     }
 
     const existing = db.prepare(`
@@ -513,8 +659,17 @@ module.exports = {
       throw new Error(`This time slot (${timeSlot}) with ${doctor.name} is already booked. Please choose another time.`);
     }
 
+    const patientOverlap = db.prepare(`
+      SELECT id FROM appointments
+      WHERE user_id = ? AND appointment_date = ? AND time_slot = ? AND status != 'Cancelled'
+    `).get(userId, appointmentDate, timeSlot);
+
+    if (patientOverlap) {
+      throw new Error(`You already have another appointment booked on ${appointmentDate} at ${timeSlot}. Please pick a different time.`);
+    }
+
     const refCode = `MED-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const nowIso = new Date().toISOString();
+    const nowIso = now.toISOString();
 
     const stmt = db.prepare(`
       INSERT INTO appointments (
@@ -524,27 +679,34 @@ module.exports = {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Confirmed', ?, ?)
     `);
 
-    stmt.run(
-      refCode,
-      userId,
-      patientName.trim(),
-      patientEmail.trim(),
-      patientPhone ? patientPhone.trim() : null,
-      departmentId,
-      doctorId,
-      appointmentDate,
-      timeSlot,
-      medicalIssue.trim(),
-      description ? description.trim() : null,
-      nowIso,
-      nowIso
-    );
+    try {
+      stmt.run(
+        refCode,
+        userId,
+        patientName.trim(),
+        patientEmail.trim(),
+        patientPhone ? patientPhone.trim() : null,
+        departmentId,
+        doctorId,
+        appointmentDate,
+        timeSlot,
+        medicalIssue.trim(),
+        description ? description.trim() : null,
+        nowIso,
+        nowIso
+      );
+    } catch (err) {
+      if (err && /UNIQUE constraint failed/i.test(err.message)) {
+        throw new Error(`This time slot (${timeSlot}) on ${appointmentDate} is no longer available. Please choose another time.`);
+      }
+      throw err;
+    }
 
     const created = db.prepare('SELECT * FROM appointments WHERE reference_code = ?').get(refCode);
     return this.getAppointmentById(created.id, userId);
   },
 
-  // Cancel Appointment
+  // Cancel Appointment (Eligible Upcoming Visits Only)
   cancelAppointment(id, userId, cancellationReason = 'Cancelled by patient') {
     const apt = this.getAppointmentById(id, userId);
     if (!apt) {
@@ -559,20 +721,28 @@ module.exports = {
       throw new Error('Cannot cancel an appointment that has already been completed.');
     }
 
-    const nowIso = new Date().toISOString();
+    const now = new Date();
+    const todayStr = getLocalTodayStr(now);
+    if (apt.appointment_date < todayStr || (apt.appointment_date === todayStr && isSlotElapsedToday(apt.time_slot, now))) {
+      throw new Error('Cannot cancel an appointment whose scheduled time has already passed.');
+    }
+
+    const cleanReason = String(cancellationReason || '').trim().slice(0, 300) || 'Cancelled by patient';
+    const nowIso = now.toISOString();
     db.prepare(`
       UPDATE appointments 
       SET status = 'Cancelled', cancellation_reason = ?, cancelled_at = ?, updated_at = ?
       WHERE id = ? AND user_id = ?
-    `).run(cancellationReason, nowIso, nowIso, id, userId);
+    `).run(cleanReason, nowIso, nowIso, id, userId);
 
     return this.getAppointmentById(id, userId);
   },
 
   // User Dashboard Stats
   getUserStats(userId) {
+    const todayStr = getLocalTodayStr();
     const total = db.prepare('SELECT COUNT(*) as c FROM appointments WHERE user_id = ?').get(userId).c;
-    const upcoming = db.prepare("SELECT COUNT(*) as c FROM appointments WHERE user_id = ? AND status = 'Confirmed' AND appointment_date >= date('now')").get(userId).c;
+    const upcoming = db.prepare("SELECT COUNT(*) as c FROM appointments WHERE user_id = ? AND status IN ('Confirmed', 'Pending') AND appointment_date >= ?").get(userId, todayStr).c;
     const pending = db.prepare("SELECT COUNT(*) as c FROM appointments WHERE user_id = ? AND status = 'Pending'").get(userId).c;
     const completed = db.prepare("SELECT COUNT(*) as c FROM appointments WHERE user_id = ? AND status = 'Completed'").get(userId).c;
     const cancelled = db.prepare("SELECT COUNT(*) as c FROM appointments WHERE user_id = ? AND status = 'Cancelled'").get(userId).c;
@@ -582,10 +752,10 @@ module.exports = {
       FROM appointments a
       JOIN doctors doc ON a.doctor_id = doc.id
       JOIN departments d ON a.department_id = d.id
-      WHERE a.user_id = ? AND a.status = 'Confirmed' AND a.appointment_date >= date('now')
+      WHERE a.user_id = ? AND a.status IN ('Confirmed', 'Pending') AND a.appointment_date >= ?
       ORDER BY a.appointment_date ASC, a.time_slot ASC
       LIMIT 1
-    `).get(userId);
+    `).get(userId, todayStr);
 
     return {
       total,

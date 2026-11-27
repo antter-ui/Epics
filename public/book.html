@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book Appointment – The Practitioner Medical Clinic</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/design-system/tokens.css" />
+  <link rel="stylesheet" href="/design-system/components.css" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <div id="siteHeader"></div>
+  <div id="portalSubnav"></div>
+
+  <main>
+    <section class="tp-page-banner" style="padding:48px 0;">
+      <img src="/assets/backgrounds/hero-curve-line.svg" alt="" class="tp-hero__curve" />
+      <div class="tp-container tp-page-banner__inner">
+        <div class="tp-breadcrumb"><a href="/index.html">Home</a> <span>/</span> <span>Book Consultation</span></div>
+        <h1>Book a Consultation</h1>
+        <p class="tp-section-heading__subtitle" style="margin-top:12px;">
+          Choose a department, pick your specialist, and lock in an available slot checked in real time.
+        </p>
+      </div>
+    </section>
+
+    <section class="tp-section" style="padding-top:56px;">
+      <div class="tp-container tp-split" style="align-items:start;">
+        <!-- Left Editorial Visual (Matches /book-a-consultation/ 768x880 visual) -->
+        <div style="position:relative;">
+          <div style="border-radius:var(--tp-radius-leaf); overflow:hidden; border:1px solid var(--tp-color-border); aspect-ratio:768/880; max-width:480px;">
+            <img src="https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=768&h=880&fit=crop" alt="Physician reviewing consultation schedule" style="width:100%; height:100%; object-fit:cover;" />
+          </div>
+          <div id="selectedDocSummary" class="tp-card tp-card--cream" style="margin-top:24px; max-width:480px;" hidden>
+            <div style="display:flex; gap:16px; align-items:center;">
+              <img id="sumDocImg" src="/assets/icons/patient-avatar.svg" alt="Selected Specialist" width="64" height="64" style="border-radius:50%; object-fit:cover;" />
+              <div>
+                <strong id="sumDocName" style="font-size:19px; color:var(--tp-color-secondary);"></strong>
+                <div id="sumDocMeta" style="font-size:15px; color:var(--tp-color-primary);"></div>
+                <div id="sumDocRoom" style="font-size:14px; color:var(--tp-color-text);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Interactive Booking Wizard -->
+        <div class="tp-card tp-card--bordered" id="bookingWizardCard">
+          <div id="bookingFormWrap">
+            <form id="bookConsultationForm" class="tp-appointment-form">
+              <div class="tp-form-grid">
+                <div class="tp-field">
+                  <label class="tp-label" for="bName">Full Name <span class="tp-label__req">*</span></label>
+                  <input id="bName" type="text" class="tp-input" required />
+                </div>
+                <div class="tp-field">
+                  <label class="tp-label" for="bEmail">Email Address <span class="tp-label__req">*</span></label>
+                  <input id="bEmail" type="email" class="tp-input" readonly style="background:var(--tp-color-alternate);" required />
+                </div>
+                <div class="tp-field">
+                  <label class="tp-label" for="bPhone">Phone Number (Optional)</label>
+                  <input id="bPhone" type="tel" class="tp-input" placeholder="+1 (555) 000-0000" />
+                </div>
+                <div class="tp-field">
+                  <label class="tp-label" for="bDept">Medical Department <span class="tp-label__req">*</span></label>
+                  <select id="bDept" class="tp-select" required></select>
+                </div>
+                <div class="tp-field">
+                  <label class="tp-label" for="bDoc">Specialist Doctor <span class="tp-label__req">*</span></label>
+                  <select id="bDoc" class="tp-select" required></select>
+                </div>
+                <div class="tp-field">
+                  <label class="tp-label" for="bDate">Appointment Date <span class="tp-label__req">*</span></label>
+                  <input id="bDate" type="date" class="tp-input" required />
+                </div>
+                <div class="tp-field tp-field--full">
+                  <span class="tp-label">Real-Time Available Time Slots <span class="tp-label__req">*</span></span>
+                  <div class="tp-slot-grid" id="bSlotsGrid"></div>
+                </div>
+                <div class="tp-field tp-field--full">
+                  <label class="tp-label" for="bIssue">Primary Medical Concern <span class="tp-label__req">*</span></label>
+                  <input id="bIssue" type="text" class="tp-input" placeholder="e.g., Persistent headaches, annual heart screening..." required minlength="3" />
+                </div>
+                <div class="tp-field tp-field--full">
+                  <label class="tp-label" for="bNotes">Additional Symptoms / Medications</label>
+                  <textarea id="bNotes" class="tp-textarea" placeholder="Optional details for your specialist..."></textarea>
+                </div>
+                <div id="bErrorBox" class="tp-field tp-field--full" style="display:none; background:var(--tp-status-cancelled-bg); color:var(--tp-status-cancelled-text); border:1px solid var(--tp-status-cancelled-border); padding:12px 16px; border-radius:var(--tp-radius-sm); font-size:15px;"></div>
+                <div class="tp-field tp-field--full">
+                  <button type="submit" id="bSubmitBtn" class="tp-btn tp-btn--accent tp-btn--lg tp-btn--full">Confirm &amp; Book Appointment</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Confirmation State -->
+          <div id="bookingSuccessWrap" hidden style="text-align:center; padding:16px 8px;">
+            <img src="/assets/icons/check-verified.svg" alt="" width="48" height="48" style="margin:0 auto 14px;" />
+            <h2 style="font-size:32px;">Appointment Confirmed</h2>
+            <p style="margin-top:8px;">Booking Reference: <strong id="confRefCode" style="font-family:monospace; color:var(--tp-color-primary);"></strong></p>
+            <div class="tp-card tp-card--cream" id="confSummaryBox" style="text-align:left; margin:20px 0;"></div>
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+              <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" id="btnConfCal">Add to Google Calendar</button>
+              <button type="button" class="tp-btn tp-btn--outline tp-btn--sm" id="btnConfPrint">Print Slip</button>
+              <a href="/appointments.html" class="tp-btn tp-btn--primary tp-btn--sm">My Appointments</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="/design-system/components.js"></script>
+  <script src="/js/portal-core.js"></script>
+  <script>
+    (async function () {
+      const user = await window.PortalCore.mountLayout({ activePath: '/book.html', requireUser: true });
+      if (!user) return;
+      document.getElementById('portalSubnav').innerHTML = window.PortalCore.renderPortalSubnav('/book.html', user);
+
+      const params = new URLSearchParams(window.location.search);
+      const initDept = params.get('departmentId');
+      const initDoc = params.get('doctorId');
+
+      function getLocalDateStr(offsetDays = 0) {
+        const dt = new Date();
+        dt.setDate(dt.getDate() + offsetDays);
+        const y = dt.getFullYear();
+        const m = String(dt.getMonth() + 1).padStart(2, '0');
+        const d = String(dt.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+
+      function findNextAvailableDayStr(doc, startOffset = 1) {
+        if (!doc || !doc.available_days) return getLocalDateStr(startOffset);
+        const days = doc.available_days.split(',').map(s => s.trim());
+        const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        for (let i = startOffset; i < startOffset + 14; i++) {
+          const dt = new Date();
+          dt.setDate(dt.getDate() + i);
+          if (days.includes(names[dt.getDay()])) {
+            return getLocalDateStr(i);
+          }
+        }
+        return getLocalDateStr(startOffset);
+      }
+
+      const today = getLocalDateStr(0);
+      const tomorrow = getLocalDateStr(1);
+
+      document.getElementById('bName').value = user.name || '';
+      document.getElementById('bEmail').value = user.email || '';
+      document.getElementById('bPhone').value = user.phone || '';
+      const dateInput = document.getElementById('bDate');
+      dateInput.min = today;
+      dateInput.value = tomorrow;
+      let userPickedDate = false;
+
+      const [deptRes, docRes] = await Promise.all([
+        window.PortalCore.apiRequest('/api/departments'),
+        window.PortalCore.apiRequest('/api/doctors')
+      ]);
+      const departments = deptRes.departments || [];
+      const doctors = docRes.doctors || [];
+      let selectedSlot = '';
+      let bookedApt = null;
+
+      const deptSelect = document.getElementById('bDept');
+      const docSelect = document.getElementById('bDoc');
+      deptSelect.innerHTML = departments.map(d => `<option value="${d.id}">${window.PortalCore.esc(d.name)}</option>`).join('');
+      if (initDept) deptSelect.value = initDept;
+
+      function syncDoctors(preferDocId = null) {
+        const dId = deptSelect.value;
+        const filtered = doctors.filter(d => String(d.department_id) === String(dId));
+        docSelect.innerHTML = filtered.map(d => `<option value="${d.id}">${window.PortalCore.esc(d.name)} ($${d.consultation_fee})</option>`).join('');
+        if (preferDocId && filtered.some(d => String(d.id) === String(preferDocId))) {
+          docSelect.value = preferDocId;
+        }
+        updateDocSummary();
+        loadSlots();
+      }
+
+      function updateDocSummary() {
+        const doc = doctors.find(d => String(d.id) === String(docSelect.value));
+        const box = document.getElementById('selectedDocSummary');
+        if (!doc) { box.hidden = true; return; }
+        if (!userPickedDate) {
+          dateInput.value = findNextAvailableDayStr(doc, 1);
+        }
+        box.hidden = false;
+        document.getElementById('sumDocImg').src = doc.avatar;
+        document.getElementById('sumDocName').textContent = doc.name;
+        document.getElementById('sumDocMeta').textContent = `${doc.department_name} · $${doc.consultation_fee} / visit`;
+        document.getElementById('sumDocRoom').textContent = `${doc.room_number} · Available: ${doc.available_days}`;
+      }
+
+      async function loadSlots() {
+        const grid = document.getElementById('bSlotsGrid');
+        selectedSlot = '';
+        if (!docSelect.value || !dateInput.value) return;
+        grid.innerHTML = '<div style="grid-column:1/-1; font-size:15px;">Checking real-time availability...</div>';
+        try {
+          const data = await window.PortalCore.apiRequest(`/api/availability?doctorId=${docSelect.value}&date=${dateInput.value}`);
+          const offDutyNotice = data.is_doctor_available === false
+            ? `<div style="grid-column:1/-1; padding:12px 14px; border-radius:10px; background:var(--tp-color-alternate); font-size:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                 <span>${window.PortalCore.esc(data.doctor.name)} is off duty on ${window.PortalCore.esc(data.weekday)}s (Available: ${window.PortalCore.esc(data.doctor.available_days)}).</span>
+                 <button type="button" class="tp-btn tp-btn--outline tp-btn--sm" style="padding:6px 12px; font-size:13px;" id="jumpNextOpenDayBtn">Jump to Next Open Day</button>
+               </div>`
+            : '';
+
+          grid.innerHTML = offDutyNotice + (data.slots || []).map(s => `
+            <button type="button" class="tp-slot-btn" data-slot="${window.PortalCore.esc(s.slot)}" ${s.is_available ? '' : 'disabled'} title="${window.PortalCore.esc(s.reason)}">
+              <div>${window.PortalCore.esc(s.slot)}</div>
+              <div style="font-size:11px; opacity:0.8;">${window.PortalCore.esc(s.reason)}</div>
+            </button>
+          `).join('');
+
+          const jumpBtn = document.getElementById('jumpNextOpenDayBtn');
+          if (jumpBtn && data.doctor) {
+            jumpBtn.addEventListener('click', () => {
+              dateInput.value = findNextAvailableDayStr(data.doctor, 1);
+              loadSlots();
+            });
+          }
+
+          grid.querySelectorAll('.tp-slot-btn:not(:disabled)').forEach(btn => {
+            btn.addEventListener('click', () => {
+              grid.querySelectorAll('.tp-slot-btn').forEach(b => b.classList.remove('is-selected'));
+              btn.classList.add('is-selected');
+              selectedSlot = btn.getAttribute('data-slot');
+            });
+          });
+        } catch (err) {
+          grid.innerHTML = `<div style="grid-column:1/-1; color:#8c2626;">${window.PortalCore.esc(err.message)}</div>`;
+        }
+      }
+
+      deptSelect.addEventListener('change', () => syncDoctors());
+      docSelect.addEventListener('change', () => { updateDocSummary(); loadSlots(); });
+      dateInput.addEventListener('change', () => { userPickedDate = true; loadSlots(); });
+      syncDoctors(initDoc);
+
+      document.getElementById('bookConsultationForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const errBox = document.getElementById('bErrorBox');
+        const btn = document.getElementById('bSubmitBtn');
+        errBox.style.display = 'none';
+        if (!selectedSlot) {
+          errBox.textContent = 'Please select an available time slot.';
+          errBox.style.display = 'block';
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = 'Confirming Booking...';
+        try {
+          const res = await window.PortalCore.apiRequest('/api/appointments', {
+            method: 'POST',
+            body: JSON.stringify({
+              patientName: document.getElementById('bName').value.trim(),
+              patientEmail: document.getElementById('bEmail').value.trim(),
+              patientPhone: document.getElementById('bPhone').value.trim(),
+              departmentId: Number(deptSelect.value),
+              doctorId: Number(docSelect.value),
+              appointmentDate: dateInput.value,
+              timeSlot: selectedSlot,
+              medicalIssue: document.getElementById('bIssue').value.trim(),
+              description: document.getElementById('bNotes').value.trim()
+            })
+          });
+          bookedApt = res.appointment;
+          document.getElementById('bookingFormWrap').hidden = true;
+          document.getElementById('bookingSuccessWrap').hidden = false;
+          document.getElementById('confRefCode').textContent = bookedApt.reference_code;
+          document.getElementById('confSummaryBox').innerHTML = `
+            <div><strong>Doctor:</strong> ${window.PortalCore.esc(bookedApt.doctor_name)} (${window.PortalCore.esc(bookedApt.department_name)})</div>
+            <div><strong>Date &amp; Time:</strong> ${window.PortalCore.formatDate(bookedApt.appointment_date)} at ${window.PortalCore.esc(bookedApt.time_slot)}</div>
+            <div><strong>Location:</strong> ${window.PortalCore.esc(bookedApt.doctor_room)}</div>
+            <div><strong>Fee:</strong> $${window.PortalCore.esc(bookedApt.consultation_fee)}</div>
+          `;
+          window.PortalCore.showToast('Appointment booked successfully!', 'success');
+        } catch (err) {
+          errBox.textContent = err.message;
+          errBox.style.display = 'block';
+          loadSlots();
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Confirm & Book Appointment';
+        }
+      });
+
+      document.getElementById('btnConfCal').addEventListener('click', () => window.PortalCore.addToGoogleCalendar(bookedApt));
+      document.getElementById('btnConfPrint').addEventListener('click', () => window.PortalCore.printAppointmentSlip(bookedApt));
+    })();
+  </script>
+</body>
+</html>

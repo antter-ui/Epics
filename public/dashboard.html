@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patient Dashboard – The Practitioner Medical Clinic</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/design-system/tokens.css" />
+  <link rel="stylesheet" href="/design-system/components.css" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <div id="siteHeader"></div>
+  <div id="portalSubnav"></div>
+
+  <main class="tp-section" style="padding-top:48px;">
+    <div class="tp-container">
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:20px; margin-bottom:28px;">
+        <div>
+          <h1 style="font-size:clamp(36px, 4.2vw, 54px);">Welcome back, <span id="dashUserName" class="tp-serif-italic" style="color:var(--tp-color-primary);">Patient</span></h1>
+          <p style="margin-top:8px;">Review your patient profile, upcoming visits, previous consultations, and live appointment statuses.</p>
+        </div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <a href="/book.html" class="tp-btn tp-btn--accent tp-btn--sm">Quick Book Appointment</a>
+          <a href="/appointments.html" class="tp-btn tp-btn--outline tp-btn--sm">All Appointments</a>
+        </div>
+      </div>
+
+      <!-- Patient Information Card -->
+      <div class="tp-card tp-card--cream" style="margin-bottom:28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px;">
+        <div style="display:flex; align-items:center; gap:18px;">
+          <img id="dashAvatar" src="/assets/icons/patient-avatar.svg" alt="Patient Avatar" width="64" height="64" style="border-radius:50%; object-fit:cover; border:2px solid var(--tp-color-border);" />
+          <div>
+            <h2 id="dashInfoName" style="font-size:22px;">Patient</h2>
+            <div id="dashInfoEmail" style="font-size:15px; color:var(--tp-color-primary);"></div>
+            <div id="dashInfoMeta" style="font-size:14px; color:var(--tp-color-tertiary);"></div>
+          </div>
+        </div>
+        <a href="/profile.html" class="tp-btn tp-btn--outline tp-btn--sm">Manage Profile</a>
+      </div>
+
+      <!-- 4 Metrics Cards -->
+      <div class="tp-metrics-grid">
+        <div class="tp-metric-card">
+          <div><div class="tp-metric-card__val" id="mUpcoming">0</div><div class="tp-metric-card__label">Upcoming Visits</div></div>
+          <img src="/assets/icons/calendar.svg" alt="" width="28" height="28" />
+        </div>
+        <div class="tp-metric-card">
+          <div><div class="tp-metric-card__val" id="mCompleted">0</div><div class="tp-metric-card__label">Completed Consultations</div></div>
+          <img src="/assets/icons/check-verified.svg" alt="" width="28" height="28" />
+        </div>
+        <div class="tp-metric-card">
+          <div><div class="tp-metric-card__val" id="mPending">0</div><div class="tp-metric-card__label">Pending Confirmation</div></div>
+          <img src="/assets/icons/clock.svg" alt="" width="28" height="28" />
+        </div>
+        <div class="tp-metric-card">
+          <div><div class="tp-metric-card__val" id="mTotal">0</div><div class="tp-metric-card__label">Total Records</div></div>
+          <img src="/assets/icons/search.svg" alt="" width="28" height="28" />
+        </div>
+      </div>
+
+      <!-- Next Upcoming Banner -->
+      <div id="nextUpcomingMount"></div>
+
+      <!-- Upcoming Appointments -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+        <h2 style="font-size:30px;">Upcoming Appointments</h2>
+        <a href="/book.html" class="tp-btn tp-btn--link">+ Schedule New Visit &rarr;</a>
+      </div>
+      <div class="tp-apt-grid" id="dashUpcomingGrid" style="margin-bottom:44px;"></div>
+
+      <!-- Previous Appointments -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+        <h2 style="font-size:30px;">Previous Appointments</h2>
+        <a href="/appointments.html" class="tp-btn tp-btn--link">Full Appointment History &rarr;</a>
+      </div>
+      <div class="tp-apt-grid" id="dashPreviousGrid"></div>
+    </div>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="/design-system/components.js"></script>
+  <script src="/js/portal-core.js"></script>
+  <script>
+    (async function () {
+      const user = await window.PortalCore.mountLayout({ activePath: '/dashboard.html', requireUser: true });
+      if (!user) return;
+
+      document.getElementById('portalSubnav').innerHTML = window.PortalCore.renderPortalSubnav('/dashboard.html', user);
+      document.getElementById('dashUserName').textContent = user.name;
+      document.getElementById('dashAvatar').src = user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}&backgroundColor=527359`;
+      document.getElementById('dashInfoName').textContent = user.name;
+      document.getElementById('dashInfoEmail').textContent = user.email;
+      document.getElementById('dashInfoMeta').textContent = `Verified Patient Account · Joined ${new Date(user.created_at).toLocaleDateString()}`;
+
+      const [statsRes, aptsRes] = await Promise.all([
+        window.PortalCore.apiRequest('/api/stats'),
+        window.PortalCore.apiRequest('/api/appointments')
+      ]);
+
+      const stats = statsRes.stats || {};
+      const appointments = aptsRes.appointments || [];
+
+      document.getElementById('mUpcoming').textContent = stats.upcoming || 0;
+      document.getElementById('mCompleted').textContent = stats.completed || 0;
+      document.getElementById('mPending').textContent = stats.pending || 0;
+      document.getElementById('mTotal').textContent = stats.total || 0;
+
+      const next = stats.nextUpcoming;
+      if (next) {
+        document.getElementById('nextUpcomingMount').innerHTML = `
+          <div class="tp-next-banner">
+            <div style="display:flex; align-items:center; gap:18px; flex-wrap:wrap;">
+              <img src="${window.PortalCore.esc(next.doctor_avatar)}" alt="${window.PortalCore.esc(next.doctor_name)}" width="68" height="68" style="border-radius:50%; object-fit:cover; border:2px solid #BED173;" />
+              <div>
+                <div style="font-size:14px; color:#EDF5CC; font-weight:500;">Next Confirmed Visit &bull; Ref ${window.PortalCore.esc(next.reference_code)}</div>
+                <div style="font-size:24px; font-weight:500;">${window.PortalCore.esc(next.doctor_name)} (${window.PortalCore.esc(next.department_name)})</div>
+                <div style="font-size:16px; opacity:0.9;">${window.PortalCore.formatDate(next.appointment_date)} at ${window.PortalCore.esc(next.time_slot)} &bull; ${window.PortalCore.esc(next.doctor_room)}</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" id="btnNextCal">Add to Google Calendar</button>
+              <a href="/appointments.html" class="tp-btn tp-btn--outline tp-btn--sm" style="color:#FFFFFF; border-color:rgba(255,255,255,0.4);">View Details</a>
+            </div>
+          </div>
+        `;
+        document.getElementById('btnNextCal').addEventListener('click', () => window.PortalCore.addToGoogleCalendar(next));
+      }
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      const upcomingList = appointments.filter(a => (a.status === 'Confirmed' || a.status === 'Pending') && a.appointment_date >= todayStr);
+      const previousList = appointments.filter(a => a.status === 'Completed' || a.status === 'Cancelled' || a.appointment_date < todayStr);
+
+      function renderAptCard(a) {
+        return `
+          <article class="tp-card tp-card--bordered">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+              <div>
+                <div style="font-size:14px; color:var(--tp-color-primary); font-weight:500;">${window.PortalCore.esc(a.department_name)}</div>
+                <h3 style="font-size:22px; margin-top:2px;">${window.PortalCore.esc(a.doctor_name)}</h3>
+              </div>
+              <span class="tp-status-badge tp-status--${a.status.toLowerCase()}">${window.PortalCore.esc(a.status)}</span>
+            </div>
+            <div style="margin-top:14px; font-size:16px;">
+              <div><strong>Date:</strong> ${window.PortalCore.formatDate(a.appointment_date)} at ${window.PortalCore.esc(a.time_slot)}</div>
+              <div><strong>Concern:</strong> ${window.PortalCore.esc(a.medical_issue)}</div>
+            </div>
+            <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-family:monospace; font-size:14px; color:var(--tp-color-tertiary);">${window.PortalCore.esc(a.reference_code)}</span>
+              <a href="/appointments.html" class="tp-btn tp-btn--link tp-btn--sm">Manage &rarr;</a>
+            </div>
+          </article>
+        `;
+      }
+
+      const upGrid = document.getElementById('dashUpcomingGrid');
+      upGrid.innerHTML = upcomingList.length
+        ? upcomingList.map(renderAptCard).join('')
+        : `<div class="tp-card tp-card--cream" style="grid-column:1/-1; text-align:center; padding:36px;">
+             <h3 style="font-size:22px;">No Upcoming Appointments</h3>
+             <p style="margin-top:8px;">Book a consultation with one of our 12 board-certified specialists.</p>
+             <a href="/book.html" class="tp-btn tp-btn--accent tp-btn--sm" style="margin-top:14px;">Book Your Visit</a>
+           </div>`;
+
+      const prevGrid = document.getElementById('dashPreviousGrid');
+      prevGrid.innerHTML = previousList.length
+        ? previousList.map(renderAptCard).join('')
+        : `<div class="tp-card tp-card--cream" style="grid-column:1/-1; text-align:center; padding:32px;">
+             <p style="margin:0;">No previous, completed, or cancelled visits recorded yet.</p>
+           </div>`;
+    })();
+  </script>
+</body>
+</html>

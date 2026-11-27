@@ -1,0 +1,5 @@
+/* Open-Source Typography Manifest (SIL Open Font License 1.1)
+   Replaces local proprietary theme copies of Outfit Local & Radley Local
+   with Google Fonts CDN declarations preserving identical font families and weights. */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Radley:ital@0;1&display=swap');

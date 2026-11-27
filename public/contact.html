@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact Us – The Practitioner Medical Clinic</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/design-system/tokens.css" />
+  <link rel="stylesheet" href="/design-system/components.css" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <div id="siteHeader"></div>
+
+  <main>
+    <section class="tp-page-banner">
+      <img src="/assets/backgrounds/hero-curve-line.svg" alt="" class="tp-hero__curve" />
+      <div class="tp-container tp-page-banner__inner">
+        <div class="tp-breadcrumb"><a href="/index.html">Home</a> <span>/</span> <span>Contact</span></div>
+        <h1>Contact Information</h1>
+        <p class="tp-section-heading__subtitle" style="margin-top:16px;">
+          Reach our care coordinators for clinic directions, specialist referrals, or patient portal assistance.
+        </p>
+      </div>
+    </section>
+
+    <section class="tp-section">
+      <div class="tp-container tp-split">
+        <div>
+          <h2>Get in Touch with Our Clinic</h2>
+          <p style="margin-top:14px;">For immediate appointment scheduling with live doctor availability, use our online booking portal.</p>
+
+          <div style="display:flex; flex-direction:column; gap:18px; margin-top:28px;">
+            <div class="tp-card tp-card--cream" style="display:flex; gap:16px; align-items:flex-start;">
+              <img src="/assets/icons/phone.svg" alt="" width="22" height="22" />
+              <div><strong>Clinic Front Desk</strong><div>+1 (800) 555-0194 &bull; Mon–Sat, 8:30 AM – 5:30 PM</div></div>
+            </div>
+            <div class="tp-card tp-card--cream" style="display:flex; gap:16px; align-items:flex-start;">
+              <img src="/assets/icons/clock.svg" alt="" width="22" height="22" />
+              <div><strong>Consultation Hours</strong><div>Morning: 09:00 AM – 11:30 AM &bull; Afternoon: 02:00 PM – 05:00 PM</div></div>
+            </div>
+            <div class="tp-card tp-card--cream" style="display:flex; gap:16px; align-items:flex-start;">
+              <img src="/assets/icons/calendar.svg" alt="" width="22" height="22" />
+              <div><strong>Emergency Notice</strong><div>For life-threatening symptoms, dial <strong>911</strong> or go to the nearest Emergency Department.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tp-card tp-card--bordered">
+          <h3>Send a Clinic Inquiry</h3>
+          <form class="tp-form-grid" id="contactInquiryForm" style="margin-top:20px;">
+            <div class="tp-field">
+              <label class="tp-label" for="cName">Full Name</label>
+              <input id="cName" type="text" class="tp-input" placeholder="Your name" required />
+            </div>
+            <div class="tp-field">
+              <label class="tp-label" for="cEmail">Email Address</label>
+              <input id="cEmail" type="email" class="tp-input" placeholder="name@example.com" required />
+            </div>
+            <div class="tp-field tp-field--full">
+              <label class="tp-label" for="cTopic">Topic</label>
+              <select id="cTopic" class="tp-select">
+                <option>Appointment Scheduling Question</option>
+                <option>Insurance &amp; Consultation Fees</option>
+                <option>Medical Records &amp; Portal Access</option>
+              </select>
+            </div>
+            <div class="tp-field tp-field--full">
+              <label class="tp-label" for="cMessage">Message</label>
+              <textarea id="cMessage" class="tp-textarea" placeholder="How can our care team help?" required></textarea>
+            </div>
+            <div class="tp-field tp-field--full">
+              <button type="submit" class="tp-btn tp-btn--accent tp-btn--full">Send Message</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="/design-system/components.js"></script>
+  <script src="/js/portal-core.js"></script>
+  <script>
+    (async function () {
+      await window.PortalCore.mountLayout({ activePath: '/contact.html' });
+      document.getElementById('contactInquiryForm').addEventListener('submit', e => {
+        e.preventDefault();
+        window.PortalCore.showToast('Thank you! Our clinic coordinator will respond shortly.', 'success');
+        e.target.reset();
+      });
+    })();
+  </script>
+</body>
+</html>

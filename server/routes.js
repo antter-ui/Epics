@@ -243,23 +243,56 @@ async function handleApiRequest(req, res) {
         return sendJson(res, 400, { error: 'Invalid date format. Expected YYYY-MM-DD.' });
       }
 
-      const availability = db.getDoctorSlotAvailability(doctorId, dateStr);
-      return sendJson(res, 200, availability);
+      try {
+        const availability = db.getDoctorSlotAvailability(doctorId, dateStr);
+        return sendJson(res, 200, availability);
+      } catch (err) {
+        const status = err.message === 'Doctor not found' ? 404 : 400;
+        return sendJson(res, status, { error: err.message });
+      }
     }
 
     // --- PROTECTED ROUTES (Require Valid Patient Authentication) ---
     const authResult = auth.authenticate(req);
 
-    // Guard all remaining appointment & stats endpoints
-    if (pathname.startsWith('/api/appointments') || pathname === '/api/stats') {
+    // Guard all remaining patient-scoped endpoints
+    if (
+      pathname.startsWith('/api/appointments') ||
+      pathname === '/api/stats' ||
+      pathname === '/api/profile'
+    ) {
       if (!authResult) {
         return sendJson(res, 401, {
-          error: 'Authentication required. Please sign in with Google to view and book appointments.'
+          error: 'Authentication required. Please sign in to access your medical portal.'
         });
       }
     }
 
     const currentUserId = authResult ? authResult.user.id : null;
+
+    // 10b. Patient Profile (View & Update persisted DB fields)
+    if (pathname === '/api/profile' && method === 'GET') {
+      return sendJson(res, 200, { user: authResult.user });
+    }
+
+    if (pathname === '/api/profile' && (method === 'PUT' || method === 'PATCH')) {
+      const body = await parseBody(req);
+      try {
+        const updatedUser = db.updateUserProfile(currentUserId, {
+          name: body.name,
+          phone: body.phone,
+          emergency_contact: body.emergency_contact,
+          allergies: body.allergies
+        });
+        return sendJson(res, 200, {
+          success: true,
+          message: 'Patient profile updated successfully.',
+          user: updatedUser
+        });
+      } catch (err) {
+        return sendJson(res, 400, { error: err.message });
+      }
+    }
 
     // 11. Dashboard Stats
     if (pathname === '/api/stats' && method === 'GET') {
@@ -363,6 +396,9 @@ async function handleApiRequest(req, res) {
     return sendJson(res, 404, { error: `Route not found: ${method} ${pathname}` });
 
   } catch (err) {
+    if (err.message === 'Invalid JSON' || err.message === 'Payload too large') {
+      return sendJson(res, 400, { error: err.message });
+    }
     console.error('API Error:', err);
     return sendJson(res, 500, { error: 'Internal server error: ' + err.message });
   }

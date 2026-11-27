@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About Us – The Practitioner Medical Clinic</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/design-system/tokens.css" />
+  <link rel="stylesheet" href="/design-system/components.css" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <div id="siteHeader"></div>
+
+  <main>
+    <section class="tp-page-banner">
+      <img src="/assets/backgrounds/hero-curve-line.svg" alt="" class="tp-hero__curve" />
+      <div class="tp-container tp-page-banner__inner">
+        <div class="tp-breadcrumb"><a href="/index.html">Home</a> <span>/</span> <span>About Us</span></div>
+        <h1>About Our Medical Practice</h1>
+        <p class="tp-section-heading__subtitle" style="margin-top:16px;">
+          Calm, root-cause medicine uniting twelve board-certified specialists with effortless digital appointment care.
+        </p>
+      </div>
+    </section>
+
+    <section class="tp-section">
+      <div class="tp-container">
+        <div style="border-radius:var(--tp-radius-card); overflow:hidden; border:1px solid var(--tp-color-border); aspect-ratio:1280/660; margin-bottom:56px;">
+          <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1280&h=660&fit=crop" alt="Modern medical clinic corridor" style="width:100%; height:100%; object-fit:cover;" />
+        </div>
+
+        <div class="tp-split">
+          <div>
+            <h2>Our Clinical Philosophy</h2>
+            <p style="margin-top:18px;">
+              Healthcare often feels rushed and fragmented. At The Practitioner, every consultation begins by listening closely to your history, diagnostic markers, and daily habits.
+            </p>
+            <p>
+              Across Cardiology, Dermatology, Orthopedics, General Medicine, Neurology, and Pediatrics, our physicians collaborate so you never have to piece together conflicting advice alone.
+            </p>
+          </div>
+          <div class="tp-blockquote-card">
+            <blockquote class="tp-blockquote-card__quote">
+              “True clinical care happens when scientific precision meets unhurried human attention.”
+            </blockquote>
+            <cite class="tp-blockquote-card__cite">— Dr. William Chen, Head of Internal Medicine</cite>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tp-section tp-section--cream" id="faq">
+      <div class="tp-container tp-container--narrow">
+        <div class="tp-section-heading tp-section-heading--center">
+          <h2>Frequently Asked Questions</h2>
+          <p class="tp-section-heading__subtitle">Everything you need to know before booking your first visit.</p>
+        </div>
+
+        <div class="tp-faq-list">
+          <div class="tp-faq-item is-open">
+            <button type="button" class="tp-faq-btn"><span>How do I book an appointment online?</span><span>+</span></button>
+            <div class="tp-faq-answer">Visit our Book Appointment page, choose your medical department and specialist, select a date, and click any live open time slot. Your booking is confirmed immediately with a unique reference code.</div>
+          </div>
+          <div class="tp-faq-item">
+            <button type="button" class="tp-faq-btn"><span>Can two patients accidentally book the same slot?</span><span>+</span></button>
+            <div class="tp-faq-answer">No. Our SQLite scheduling engine validates real-time slot availability before and during submission to prevent double-booking collisions.</div>
+          </div>
+          <div class="tp-faq-item">
+            <button type="button" class="tp-faq-btn"><span>Can I reschedule or cancel a confirmed visit?</span><span>+</span></button>
+            <div class="tp-faq-answer">Yes. Open My Appointments in the Patient Portal to inspect visit details, print your clinic check-in slip, or cancel any upcoming visit with a single click.</div>
+          </div>
+          <div class="tp-faq-item">
+            <button type="button" class="tp-faq-btn"><span>What should I do in a medical emergency?</span><span>+</span></button>
+            <div class="tp-faq-answer">If you experience chest pain, severe shortness of breath, or any life-threatening emergency, dial 911 or visit the nearest Emergency Department immediately.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="/design-system/components.js"></script>
+  <script src="/js/portal-core.js"></script>
+  <script>
+    (async function () {
+      await window.PortalCore.mountLayout({ activePath: '/about.html' });
+      document.querySelectorAll('.tp-faq-btn').forEach(btn => {
+        btn.addEventListener('click', () => btn.closest('.tp-faq-item').classList.toggle('is-open'));
+      });
+    })();
+  </script>
+</body>
+</html>

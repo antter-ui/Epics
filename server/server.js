@@ -36,6 +36,14 @@ function serveStatic(req, res) {
 
   let filePath = path.join(PUBLIC_DIR, pathname);
 
+  // Support directory index.html and clean extensionless page routes (e.g. /about -> /about.html)
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+    const dirIndex = path.join(filePath, 'index.html');
+    if (fs.existsSync(dirIndex)) filePath = dirIndex;
+  } else if (!path.extname(pathname) && fs.existsSync(filePath + '.html')) {
+    filePath = filePath + '.html';
+  }
+
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
       // If file not found and doesn't look like a direct asset file, fallback to index.html (SPA)

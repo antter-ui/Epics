@@ -1,1170 +1,273 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - MediCare Connect | Patient Appointment Portal</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <meta name="theme-color" content="#ffffff">
-
-  <!-- Google Fonts: Montserrat (All Weights 300-900) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
-
-  <!-- Firebase App & Auth SDK (Compat) -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patient Sign In – The Practitioner Medical Clinic</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/design-system/tokens.css" />
+  <link rel="stylesheet" href="/design-system/components.css" />
+  <link rel="stylesheet" href="/css/site.css" />
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="/firebase-config.js"></script>
-
   <style>
-    /* ============================================================
-       Professional AI-Grade Split Screen Auth - Montserrat Edition
-       ============================================================ */
-    :root {
-      --font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      --bg-canvas: #ffffff;
-      --mint-panel: #edf7f2;
-      --text-main: #0a0f1d;
-      --text-muted: #475569;
-      --text-light: #64748b;
-      --border-subtle: #e2e8f0;
-      --border-focus: #0369a1;
-      --btn-black: #0a0f1d;
-      --btn-black-hover: #000000;
-      --primary-blue: #0369a1;
-      --accent-green: #047857;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html, body {
-      height: 100%;
-      font-family: var(--font-family);
-      background-color: var(--bg-canvas);
-      color: var(--text-main);
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    /* Subtle AI ambient glow across background */
-    body {
-      background-image: 
-        radial-gradient(circle at 10% 20%, rgba(2, 132, 199, 0.035) 0%, transparent 45%),
-        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.045) 0%, transparent 45%);
-    }
-
-    /* Main Full-Screen Split View */
-    .login-page-layout {
+    .tp-auth-wrap {
+      min-height: calc(100vh - 140px);
       display: grid;
-      grid-template-columns: 1fr 1.08fr;
-      min-height: 100vh;
-      width: 100%;
+      grid-template-columns: 1fr 1.05fr;
+      background-color: var(--tp-color-bg);
     }
-
-    /* ------------------------------------------------------------
-       Left Column: Authentication Form
-       ------------------------------------------------------------ */
-    .auth-column {
+    .tp-auth-form-col {
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      padding: 44px 72px 36px 72px;
-      max-width: 580px;
+      justify-content: center;
+      padding: 56px 64px;
+      max-width: 560px;
       width: 100%;
       margin: 0 auto;
     }
-
-    /* Brand Header with AI Badge */
-    .brand-header-row {
+    .tp-auth-visual-col {
+      background-color: var(--tp-color-alternate);
+      border-left: 1px solid var(--tp-color-border);
+      padding: 56px 48px;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .brand-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-      color: var(--text-main);
-      user-select: none;
-    }
-
-    .brand-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
-      display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: center;
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14);
       position: relative;
+      overflow: hidden;
     }
-
-    .brand-title {
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: var(--text-main);
-    }
-
-    .brand-title span {
-      color: var(--primary-blue);
-      font-weight: 800;
-    }
-
-    .ai-smart-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: #e0f2fe;
-      border: 1px solid #bae6fd;
-      color: #0369a1;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    /* Main Form Container */
-    .form-wrapper {
-      margin: auto 0;
-      padding: 24px 0;
-      width: 100%;
-    }
-
-    .auth-heading {
-      font-size: 36px;
-      font-weight: 800;
-      color: var(--text-main);
-      letter-spacing: -0.8px;
-      margin-bottom: 10px;
-      line-height: 1.2;
-    }
-
-    .auth-description {
-      font-size: 14.5px;
-      color: var(--text-muted);
-      line-height: 1.6;
-      margin-bottom: 32px;
-      max-width: 410px;
-      font-weight: 450;
-    }
-
-    /* Form Inputs */
-    .form-group {
-      margin-bottom: 18px;
-      position: relative;
-    }
-
-    .pill-input {
-      width: 100%;
-      height: 54px;
-      padding: 0 24px;
-      border-radius: 9999px;
-      border: 1.5px solid var(--border-subtle);
-      background: #ffffff;
-      font-size: 14.5px;
-      color: var(--text-main);
-      outline: none;
-      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-      font-family: inherit;
-      font-weight: 500;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-    }
-
-    .pill-input:focus {
-      border-color: var(--primary-blue);
-      box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.04);
-    }
-
-    .pill-input::placeholder {
-      color: var(--text-light);
-      font-weight: 450;
-    }
-
-    .input-has-icon {
-      padding-right: 54px;
-    }
-
-    .input-icon-btn {
-      position: absolute;
-      right: 18px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: var(--text-light);
-      cursor: pointer;
+    .tp-auth-tabs {
       display: flex;
-      align-items: center;
-      justify-content: center;
+      gap: 8px;
+      background: var(--tp-color-alternate);
       padding: 6px;
-      transition: color 0.15s ease, transform 0.15s ease;
-      border-radius: 50%;
-    }
-
-    .input-icon-btn:hover {
-      color: var(--text-main);
-      transform: translateY(-50%) scale(1.08);
-    }
-
-    .form-sublinks {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 4px;
+      border-radius: var(--tp-radius-sm);
+      border: 1px solid var(--tp-color-border);
       margin-bottom: 24px;
     }
-
-    .forgot-link {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-main);
-      text-decoration: none;
-      cursor: pointer;
-      transition: color 0.15s;
-    }
-
-    .forgot-link:hover {
-      color: var(--primary-blue);
-      text-decoration: underline;
-    }
-
-    /* Obsidian Pill Button with AI Polish */
-    .btn-pill-submit {
-      width: 100%;
-      height: 54px;
-      border-radius: 9999px;
-      background: linear-gradient(180deg, #1e293b 0%, #0a0f1d 100%);
-      color: #ffffff;
-      font-size: 15.5px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      font-family: inherit;
-      box-shadow: 0 4px 14px rgba(10, 15, 29, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .btn-pill-submit::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
-      transition: 0.5s;
-    }
-
-    .btn-pill-submit:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(10, 15, 29, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-      background: linear-gradient(180deg, #273549 0%, #000000 100%);
-    }
-
-    .btn-pill-submit:hover::before {
-      left: 100%;
-    }
-
-    .btn-pill-submit:active {
-      transform: translateY(0);
-    }
-
-    .btn-pill-submit:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    /* Divider */
-    .divider-row {
-      display: flex;
-      align-items: center;
-      margin: 28px 0 24px 0;
-      color: var(--text-light);
-      font-size: 13px;
-      font-weight: 500;
-    }
-
-    .divider-row::before,
-    .divider-row::after {
-      content: "";
+    .tp-auth-tab {
       flex: 1;
-      height: 1px;
-      background: #edf0f2;
-    }
-
-    .divider-row span {
-      padding: 0 16px;
-    }
-
-    /* Circular Social Buttons */
-    .social-buttons-row {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 18px;
-      margin-bottom: 32px;
-    }
-
-    .social-circle-btn {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: #0a0f1d;
-      border: 1.5px solid #0a0f1d;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 10px 14px;
+      border: none;
+      border-radius: var(--tp-radius-sm);
+      background: transparent;
+      color: var(--tp-color-text);
+      font-size: 16px;
+      font-weight: 400;
       cursor: pointer;
-      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-      position: relative;
     }
-
-    .social-circle-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
-      background: #000000;
-    }
-
-    .social-circle-btn:active {
-      transform: translateY(0);
-    }
-
-    /* Footer Switcher */
-    .auth-footer {
-      text-align: center;
-      font-size: 14px;
-      color: var(--text-muted);
+    .tp-auth-tab.is-active {
+      background: var(--tp-color-bg);
+      color: var(--tp-color-secondary);
       font-weight: 500;
+      border: 1px solid var(--tp-color-border);
     }
-
-    .auth-footer a {
-      color: var(--text-main);
-      font-weight: 800;
-      text-decoration: none;
-      cursor: pointer;
-      margin-left: 4px;
-      transition: color 0.15s ease;
-    }
-
-    .auth-footer a:hover {
-      color: var(--primary-blue);
-      text-decoration: underline;
-    }
-
-    .legal-footer {
-      font-size: 12px;
-      color: var(--text-light);
-      text-align: center;
-      margin-top: 18px;
-      font-weight: 500;
-      letter-spacing: 0.02em;
-    }
-
-    /* Error Message Banner */
-    .auth-error-banner {
-      background: #fff1f2;
-      border: 1px solid #fecdd3;
-      color: #9f1239;
-      padding: 12px 20px;
-      border-radius: 9999px;
-      font-size: 13.5px;
-      margin-bottom: 20px;
+    .tp-auth-error {
+      background: var(--tp-status-cancelled-bg);
+      color: var(--tp-status-cancelled-text);
+      border: 1px solid var(--tp-status-cancelled-border);
+      border-radius: var(--tp-radius-sm);
+      padding: 11px 14px;
+      font-size: 15px;
+      margin-bottom: 16px;
       display: none;
-      text-align: center;
-      font-weight: 600;
     }
-
-    /* ------------------------------------------------------------
-       Right Column: Mint Wellness AI Panel
-       ------------------------------------------------------------ */
-    .visual-column {
-      padding: 18px 20px 20px 0;
-      display: flex;
-    }
-
-    .mint-card {
-      width: 100%;
-      background: radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.12) 0%, transparent 55%),
-                  radial-gradient(circle at 20% 80%, rgba(2, 132, 199, 0.08) 0%, transparent 55%),
-                  var(--mint-panel);
-      border-radius: 36px;
-      padding: 44px 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* Top Strip inside Visual Card */
-    .visual-top-strip {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .live-status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(12px);
-      padding: 7px 16px;
-      border-radius: 9999px;
-      font-size: 12px;
-      font-weight: 700;
-      color: #065f46;
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-    }
-
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #047857;
-    }
-
-    .verified-ai-tag {
-      font-size: 12px;
-      font-weight: 700;
-      color: #0369a1;
-      background: rgba(2, 132, 199, 0.08);
-      padding: 5px 12px;
-      border-radius: 9999px;
-    }
-
-    /* Central Illustration Stage */
-    .illustration-stage {
-      position: relative;
-      width: 100%;
-      max-width: 440px;
-      margin: auto 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Floating Bubble 1 (Top Left) */
-    .floating-bubble-1 {
-      position: absolute;
-      top: 15px;
-      left: 12px;
-      width: 54px;
-      height: 54px;
-      border-radius: 50%;
-      background: #ffffff;
-      padding: 3px;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
-      animation: floatSlow 4.5s ease-in-out infinite alternate;
-      z-index: 2;
-      position: absolute;
-    }
-
-    .floating-bubble-1 img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .online-chip {
-      position: absolute;
-      bottom: -1px;
-      right: -1px;
-      width: 14px;
-      height: 14px;
-      background: #10b981;
-      border: 2.5px solid #ffffff;
-      border-radius: 50%;
-    }
-
-    /* Floating Bubble 2 (Mid Right) */
-    .floating-bubble-2 {
-      position: absolute;
-      right: 15px;
-      top: 48%;
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: #ffffff;
-      padding: 3px;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
-      animation: floatSlow 5s ease-in-out infinite alternate-reverse;
-      z-index: 2;
-    }
-
-    .floating-bubble-2 img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    /* Floating Consultation Card with Frosted Glass */
-    .floating-task-card {
-      position: absolute;
-      bottom: 24px;
-      left: -8px;
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(16px);
-      border-radius: 20px;
-      padding: 14px 20px;
-      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.08);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      min-width: 180px;
-      z-index: 3;
-      border: 1px solid rgba(255, 255, 255, 0.9);
-      animation: floatCard 4.8s ease-in-out infinite alternate;
-    }
-
-    .task-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-    }
-
-    .task-card-title {
-      font-size: 13.5px;
-      font-weight: 800;
-      color: var(--text-main);
-    }
-
-    .task-card-sub {
-      font-size: 11.5px;
-      color: var(--text-muted);
-      font-weight: 600;
-    }
-
-    .task-progress-ring {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      border: 3.5px solid #e2e8f0;
-      border-top-color: #047857;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 800;
-      color: #065f46;
-    }
-
-    .task-card-pill {
-      display: inline-block;
-      align-self: flex-start;
-      border: 1.5px solid #cbd5e1;
-      border-radius: 9999px;
-      padding: 3px 12px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-main);
-      background: #fafafa;
-    }
-
-    /* Zen Minimalist Vector Artwork */
-    .zen-illustration {
-      width: 100%;
-      max-width: 360px;
-      height: auto;
-      display: block;
-      margin: 0 auto;
-    }
-
-    /* Visual Footer Content */
-    .visual-footer {
-      text-align: center;
-      width: 100%;
-      margin-top: 10px;
-    }
-
-    /* Carousel Dots */
-    .carousel-dots {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      margin-bottom: 18px;
-    }
-
-    .c-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 9999px;
-      background: #cbd5e1;
-      transition: all 0.3s ease;
-      cursor: pointer;
-    }
-
-    .c-dot.active {
-      width: 28px;
-      background: var(--btn-black);
-    }
-
-    .visual-tagline {
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--text-main);
-      line-height: 1.35;
-      max-width: 400px;
-      margin: 0 auto;
-      letter-spacing: -0.4px;
-    }
-
-    .visual-subtext {
-      font-size: 13.5px;
-      color: var(--text-muted);
-      margin-top: 8px;
-      font-weight: 500;
-    }
-
-    /* Floating Keyframe Animations */
-    @keyframes floatSlow {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(-8px); }
-    }
-
-    @keyframes floatCard {
-      0% { transform: translateY(0) scale(1); }
-      100% { transform: translateY(-7px) scale(1.01); }
-    }
-
-    /* Toast Notification Popup */
-    .toast-popup {
-      position: fixed;
-      bottom: 28px;
-      left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      background: #0a0f1d;
-      color: #ffffff;
-      padding: 14px 28px;
-      border-radius: 9999px;
-      font-size: 14px;
-      font-weight: 600;
-      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.28);
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
-      opacity: 0;
-      pointer-events: none;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .toast-popup.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-
-    .toast-popup.success {
-      background: #065f46;
-      border: 1px solid #10b981;
-    }
-
-    .toast-popup.error {
-      background: #9f1239;
-      border: 1px solid #f43f5e;
-    }
-
-    /* Responsive Breakpoints */
-    @media (max-width: 980px) {
-      .login-page-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .auth-column {
-        padding: 36px 32px;
-        max-width: 500px;
-      }
-
-      .visual-column {
-        padding: 0 24px 32px 24px;
-        order: -1;
-      }
-
-      .mint-card {
-        padding: 32px 24px;
-        border-radius: 28px;
-      }
-
-      .illustration-stage {
-        max-width: 300px;
-      }
-
-      .auth-heading {
-        font-size: 30px;
-      }
-    }
-
-    @media (max-width: 540px) {
-      .auth-column {
-        padding: 24px 20px;
-      }
-
-      .visual-column {
-        display: none;
-      }
+    @media (max-width: 960px) {
+      .tp-auth-wrap { grid-template-columns: 1fr; }
+      .tp-auth-form-col { padding: 40px 24px; }
+      .tp-auth-visual-col { border-left: none; border-top: 1px solid var(--tp-color-border); padding: 40px 24px; }
     }
   </style>
 </head>
 <body>
+  <div id="siteHeader"></div>
 
-  <!-- Full-Screen Split View -->
-  <main class="login-page-layout">
-    
-    <!-- LEFT SIDE: Clean Healthcare Authentication -->
-    <div class="auth-column">
-      
-      <!-- Brand Logo / Header with AI Chip -->
-      <div class="brand-header-row">
-        <a href="/index.html" class="brand-header" title="Go to MediCare Connect Home">
-          <div class="brand-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-            </svg>
-          </div>
-          <div class="brand-title">MediCare <span>Connect</span></div>
-        </a>
-        <div class="ai-smart-chip">
-          <span>Patient Portal</span>
-        </div>
-      </div>
-
-      <!-- 1. LOGIN MODE -->
-      <div id="loginView" class="form-wrapper">
-        <h1 class="auth-heading">Welcome back!</h1>
-        <p class="auth-description">
-          Book appointments with board-certified doctors and manage your health effortlessly.
+  <main class="tp-auth-wrap">
+    <section class="tp-auth-form-col">
+      <div style="margin-bottom:28px;">
+        <h1 style="font-size:clamp(34px, 4vw, 48px); line-height:1.12;">Patient Portal Access</h1>
+        <p style="margin-top:10px; font-size:17px;">
+          Sign in or register to book consultations, view real-time availability, and manage your medical visits.
         </p>
-
-        <div id="loginError" class="auth-error-banner"></div>
-
-        <form id="formLogin" onsubmit="event.preventDefault(); handleLoginSubmit();">
-          <div class="form-group">
-            <input type="email" id="loginEmail" class="pill-input" placeholder="Username or Email" required autocomplete="email" />
-          </div>
-
-          <div class="form-group">
-            <input type="password" id="loginPassword" class="pill-input input-has-icon" placeholder="Password" required autocomplete="current-password" />
-            <button type="button" class="input-icon-btn" onclick="togglePasswordVisibility('loginPassword', this)" title="Show/Hide password">
-              <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
-          </div>
-
-          <div class="form-sublinks">
-            <a class="forgot-link" onclick="handleForgotPassword()">Forgot Password?</a>
-          </div>
-
-          <button type="submit" id="btnLoginSubmit" class="btn-pill-submit">
-            <span>Login</span>
-          </button>
-        </form>
-
-        <div class="divider-row">
-          <span>or continue with</span>
-        </div>
-
-        <!-- Social Buttons (Google via Firebase, Apple, Facebook) -->
-        <div class="social-buttons-row">
-          <!-- Google Sign-In -->
-          <button type="button" class="social-circle-btn" onclick="handleGoogleSignIn()" title="Continue with Google">
-            <svg width="20" height="20" viewBox="0 0 24 24">
-              <path fill="#ffffff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#ffffff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#ffffff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-              <path fill="#ffffff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-            </svg>
-          </button>
-
-          <!-- Apple -->
-          <button type="button" class="social-circle-btn" onclick="handleSocialNotice('Apple')" title="Continue with Apple">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.01-.49 2.63-1.24z"/>
-            </svg>
-          </button>
-
-          <!-- Facebook -->
-          <button type="button" class="social-circle-btn" onclick="handleSocialNotice('Facebook')" title="Continue with Facebook">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-            </svg>
-          </button>
-        </div>
-
-        <div class="auth-footer">
-          Not a member? <a onclick="switchAuthView('register')">Register now</a>
-        </div>
       </div>
 
-      <!-- 2. REGISTER MODE -->
-      <div id="registerView" class="form-wrapper" style="display:none;">
-        <h1 class="auth-heading">Join Us!</h1>
-        <p class="auth-description">
-          Create your patient account to book specialist appointments and manage your health seamlessly.
-        </p>
-
-        <div id="regError" class="auth-error-banner"></div>
-
-        <form id="formRegister" onsubmit="event.preventDefault(); handleRegisterSubmit();">
-          <div class="form-group">
-            <input type="text" id="regName" class="pill-input" placeholder="Full Name (e.g. Sarah Jenkins)" required autocomplete="name" />
-          </div>
-
-          <div class="form-group">
-            <input type="email" id="regEmail" class="pill-input" placeholder="Email Address" required autocomplete="email" />
-          </div>
-
-          <div class="form-group">
-            <input type="password" id="regPassword" class="pill-input input-has-icon" placeholder="Create Password (min. 6 characters)" required minlength="6" autocomplete="new-password" />
-            <button type="button" class="input-icon-btn" onclick="togglePasswordVisibility('regPassword', this)" title="Show/Hide password">
-              <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
-          </div>
-
-          <button type="submit" id="btnRegSubmit" class="btn-pill-submit" style="margin-top: 8px;">
-            <span>Create Account</span>
-          </button>
-        </form>
-
-        <div class="divider-row">
-          <span>or sign up with</span>
-        </div>
-
-        <div class="social-buttons-row">
-          <button type="button" class="social-circle-btn" onclick="handleGoogleSignIn()" title="Sign up with Google">
-            <svg width="20" height="20" viewBox="0 0 24 24">
-              <path fill="#ffffff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#ffffff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#ffffff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-              <path fill="#ffffff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-            </svg>
-          </button>
-          <button type="button" class="social-circle-btn" onclick="handleSocialNotice('Apple')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.01-.49 2.63-1.24z"/>
-            </svg>
-          </button>
-          <button type="button" class="social-circle-btn" onclick="handleSocialNotice('Facebook')">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-            </svg>
-          </button>
-        </div>
-
-        <div class="auth-footer">
-          Already a member? <a onclick="switchAuthView('login')">Sign in</a>
-        </div>
+      <div class="tp-auth-tabs">
+        <button type="button" class="tp-auth-tab is-active" id="tabLoginBtn" onclick="switchAuthView('login')">Sign In</button>
+        <button type="button" class="tp-auth-tab" id="tabRegBtn" onclick="switchAuthView('register')">Create Account</button>
       </div>
 
-      <!-- Legal / Security Note -->
-      <div class="legal-footer">
-        🔒 HIPAA & GDPR Compliant Medical Portal &bull; End-to-End Encrypted
+      <form id="loginView" onsubmit="event.preventDefault(); handleLoginSubmit();">
+        <div id="loginError" class="tp-auth-error"></div>
+        <div class="tp-field" style="margin-bottom:16px;">
+          <label class="tp-label" for="loginEmail">Email Address</label>
+          <input id="loginEmail" type="email" class="tp-input" placeholder="name@example.com" required autocomplete="email" />
+        </div>
+        <div class="tp-field" style="margin-bottom:20px;">
+          <label class="tp-label" for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" class="tp-input" placeholder="Enter your password" required autocomplete="current-password" />
+        </div>
+        <button type="submit" id="btnLoginSubmit" class="tp-btn tp-btn--accent tp-btn--full">Sign In</button>
+      </form>
+
+      <form id="registerView" style="display:none;" onsubmit="event.preventDefault(); handleRegisterSubmit();">
+        <div id="regError" class="tp-auth-error"></div>
+        <div class="tp-field" style="margin-bottom:16px;">
+          <label class="tp-label" for="regName">Full Name</label>
+          <input id="regName" type="text" class="tp-input" placeholder="Jane Doe" required autocomplete="name" />
+        </div>
+        <div class="tp-field" style="margin-bottom:16px;">
+          <label class="tp-label" for="regEmail">Email Address</label>
+          <input id="regEmail" type="email" class="tp-input" placeholder="name@example.com" required autocomplete="email" />
+        </div>
+        <div class="tp-field" style="margin-bottom:20px;">
+          <label class="tp-label" for="regPassword">Create Password (min 6 characters)</label>
+          <input id="regPassword" type="password" class="tp-input" placeholder="Minimum 6 characters" required minlength="6" autocomplete="new-password" />
+        </div>
+        <button type="submit" id="btnRegSubmit" class="tp-btn tp-btn--accent tp-btn--full">Create Patient Account</button>
+      </form>
+
+      <div style="display:flex; align-items:center; gap:14px; margin:24px 0; color:var(--tp-color-tertiary); font-size:14px;">
+        <span style="flex:1; height:1px; background:var(--tp-color-border);"></span>
+        <span>or continue with Google</span>
+        <span style="flex:1; height:1px; background:var(--tp-color-border);"></span>
       </div>
 
-    </div>
-
-    <!-- RIGHT SIDE: Expansive Mint Wellness Canvas -->
-    <div class="visual-column">
-      <div class="mint-card">
-        
-        <!-- Top Strip -->
-        <div class="visual-top-strip">
-          <div class="live-status-pill">
-            <span class="pulse-dot"></span>
-            <span>Doctors Available Today</span>
+      <div id="googleFallbackModal" class="tp-modal-backdrop">
+        <div class="tp-modal-card" style="max-width:440px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="font-size:24px;">Google Sign-In</h2>
+            <button type="button" class="tp-icon-btn" onclick="document.getElementById('googleFallbackModal').classList.remove('is-open')">&times;</button>
           </div>
-          <div class="verified-ai-tag">
-            12+ Specialists
+          <p style="font-size:16px;">Select a demo Google profile or enter your Google email to continue:</p>
+          <div style="display:flex; flex-direction:column; gap:10px; margin:16px 0;">
+            <button type="button" class="tp-btn tp-btn--outline tp-btn--sm" onclick="completeDirectGoogle('sarah.jenkins@gmail.com', 'Sarah Jenkins')">Sarah Jenkins (sarah.jenkins@gmail.com)</button>
+            <button type="button" class="tp-btn tp-btn--outline tp-btn--sm" onclick="completeDirectGoogle('david.miller@gmail.com', 'David Miller')">David Miller (david.miller@gmail.com)</button>
           </div>
-        </div>
-
-        <div class="illustration-stage">
-          
-          <!-- Floating Avatar 1 (Top Left) -->
-          <div class="floating-bubble-1" title="Dr. Marcus Vance (Cardiologist) - Online">
-            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop&crop=face" alt="Patient Avatar" />
-            <span class="online-chip"></span>
-          </div>
-
-          <!-- Floating Avatar 2 (Mid Right) -->
-          <div class="floating-bubble-2" title="Sarah Jenkins (Patient)">
-            <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=120&h=120&fit=crop&crop=face" alt="Doctor Avatar" />
-          </div>
-
-          <!-- Floating Consultation Card (Canva style from screenshot) -->
-          <div class="floating-task-card">
-            <div class="task-card-header">
-              <div>
-                <div class="task-card-title">Doctor Consult</div>
-                <div class="task-card-sub">12 Specialists</div>
-              </div>
-              <div class="task-progress-ring" title="84% available slots">
-                84%
-              </div>
+          <form onsubmit="event.preventDefault(); const em=document.getElementById('customGoogleEmail').value.trim(); if(em) completeDirectGoogle(em);">
+            <div class="tp-field" style="margin-bottom:12px;">
+              <label class="tp-label" for="customGoogleEmail">Or enter Google email</label>
+              <input id="customGoogleEmail" type="email" class="tp-input" placeholder="your.name@gmail.com" required />
             </div>
-            <span class="task-card-pill">Cardiology</span>
-          </div>
-
-          <!-- Zen Minimalist Line-Art Vector Artwork -->
-          <svg class="zen-illustration" viewBox="0 0 340 330" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Calming Green Cloud Ripples -->
-            <path d="M70 120 C 60 70, 110 50, 150 65 C 180 40, 240 50, 250 85 C 280 95, 290 140, 265 170 C 290 200, 260 250, 220 240" 
-                  stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 4" opacity="0.65" />
-            
-            <path d="M85 170 C 60 195, 65 240, 105 245 C 110 270, 140 280, 170 270" 
-                  stroke="#10b981" stroke-width="1.8" stroke-linecap="round" opacity="0.5" />
-
-            <!-- Head & Peaceful Face -->
-            <path d="M170 82 C 158 82, 148 93, 148 108 C 148 122, 158 132, 170 132 C 182 132, 192 122, 192 108 C 192 93, 182 82, 170 82 Z" 
-                  fill="#ffffff" stroke="#0a0f1d" stroke-width="2.5" />
-            
-            <!-- Dark Hair -->
-            <path d="M150 102 C 148 88, 160 75, 175 75 C 190 75, 195 86, 193 98 C 188 95, 180 94, 172 96 C 165 98, 156 104, 150 102 Z" 
-                  fill="#0a0f1d" />
-
-            <!-- Peaceful Eyes & Smile -->
-            <path d="M161 106 Q 164 109 167 106" stroke="#0a0f1d" stroke-width="2" stroke-linecap="round" fill="none" />
-            <path d="M174 106 Q 177 109 180 106" stroke="#0a0f1d" stroke-width="2" stroke-linecap="round" fill="none" />
-            <path d="M167 116 Q 170 119 173 116" stroke="#0a0f1d" stroke-width="1.8" stroke-linecap="round" fill="none" />
-
-            <!-- Neck -->
-            <path d="M165 131 L 165 140 L 175 140 L 175 131" stroke="#0a0f1d" stroke-width="2.2" fill="#ffffff" />
-
-            <!-- Mint Wellness Sweater -->
-            <path d="M152 140 C 138 143, 130 162, 126 195 C 142 200, 198 200, 214 195 C 210 162, 202 143, 188 140 Z" 
-                  fill="#86efac" stroke="#0a0f1d" stroke-width="2.5" stroke-linejoin="round" />
-
-            <!-- Heart Emblem on Chest -->
-            <path d="M170 178 C 170 178, 158 170, 158 162 C 158 156, 163 152, 168 155 C 170 156, 170 157, 170 157 C 170 157, 170 156, 172 155 C 177 152, 182 156, 182 162 C 182 170, 170 178, 170 178 Z" 
-                  fill="#ffffff" stroke="#10b981" stroke-width="2" />
-
-            <!-- Left Arm (Meditative Pose) -->
-            <path d="M135 150 Q 112 170 102 155 Q 96 142 104 135" 
-                  stroke="#0a0f1d" stroke-width="2.5" stroke-linecap="round" fill="none" />
-            <circle cx="106" cy="135" r="5" fill="#ffffff" stroke="#0a0f1d" stroke-width="2" />
-
-            <!-- Right Arm (Meditative Pose) -->
-            <path d="M205 150 Q 228 170 238 155 Q 244 142 236 135" 
-                  stroke="#0a0f1d" stroke-width="2.5" stroke-linecap="round" fill="none" />
-            <circle cx="234" cy="135" r="5" fill="#ffffff" stroke="#0a0f1d" stroke-width="2" />
-
-            <!-- White Yoga Trousers (Crossed Legs) -->
-            <path d="M126 195 C 115 208, 108 232, 138 238 C 160 242, 170 215, 170 215 C 170 215, 180 242, 202 238 C 232 232, 225 208, 214 195 Z" 
-                  fill="#ffffff" stroke="#0a0f1d" stroke-width="2.5" stroke-linejoin="round" />
-            
-            <path d="M124 222 C 138 236, 175 250, 204 225" stroke="#0a0f1d" stroke-width="2.2" stroke-linecap="round" fill="none" />
-            <path d="M216 222 C 202 236, 165 250, 136 225" stroke="#0a0f1d" stroke-width="2.2" stroke-linecap="round" fill="none" />
-
-            <!-- Bare Feet -->
-            <ellipse cx="145" cy="245" rx="9" ry="5" fill="#ffffff" stroke="#0a0f1d" stroke-width="2" />
-            <ellipse cx="195" cy="245" rx="9" ry="5" fill="#ffffff" stroke="#0a0f1d" stroke-width="2" />
-          </svg>
-
+            <button type="submit" class="tp-btn tp-btn--accent tp-btn--sm tp-btn--full">Continue with Email</button>
+          </form>
         </div>
-
-        <!-- Carousel Dots & Bottom Tagline -->
-        <div class="visual-footer">
-          <div class="carousel-dots" id="carouselDots">
-            <span class="c-dot active" onclick="setSlide(0)"></span>
-            <span class="c-dot" onclick="setSlide(1)"></span>
-            <span class="c-dot" onclick="setSlide(2)"></span>
-          </div>
-
-          <div class="visual-tagline" id="slideTagline">
-            Make your healthcare easier and organized with MediCare Connect
-          </div>
-          <div class="visual-subtext" id="slideSubtext">
-            Connect directly with board-certified hospital doctors in seconds
-          </div>
-        </div>
-
       </div>
-    </div>
 
+      <button type="button" class="tp-btn tp-btn--outline tp-btn--full" onclick="handleGoogleSignIn()">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>Continue with Google</span>
+      </button>
+    </section>
+
+    <aside class="tp-auth-visual-col">
+      <img src="/assets/backgrounds/hero-curve-line.svg" alt="" class="tp-hero__curve" />
+      <div style="position:relative; z-index:2; max-width:480px; margin:0 auto;">
+        <div style="border-radius:var(--tp-radius-leaf); overflow:hidden; border:1px solid var(--tp-color-border); aspect-ratio:4/3; margin-bottom:28px;">
+          <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=768&h=576&fit=crop" alt="Physician care consultation" style="width:100%; height:100%; object-fit:cover;" />
+        </div>
+        <div class="tp-blockquote-card" style="padding:32px;">
+          <blockquote class="tp-blockquote-card__quote" style="font-size:24px; margin-bottom:18px;">
+            “Your health records, upcoming slots, and clinical summaries organized calmly in one private portal.”
+          </blockquote>
+          <cite class="tp-blockquote-card__cite">12 Specialists &bull; 6 Medical Departments</cite>
+        </div>
+      </div>
+    </aside>
   </main>
 
-  <!-- Toast Notification Popup -->
-  <div id="toastPopup" class="toast-popup"></div>
+  <div id="siteFooter"></div>
 
-  <!-- Client Application Logic -->
+  <script src="/design-system/components.js"></script>
+  <script src="/js/portal-core.js"></script>
   <script>
-    // -------------------------------------------------------------
-    // Slides Carousel (Healthcare Highlights)
-    // -------------------------------------------------------------
-    const SLIDES = [
-      {
-        tagline: "Make your healthcare easier and organized with MediCare Connect",
-        subtext: "Connect directly with board-certified hospital doctors in seconds"
-      },
-      {
-        tagline: "Zero waiting lines with real-time doctor slot availability",
-        subtext: "Live physician schedules and automated Google Calendar sync"
-      },
-      {
-        tagline: "Verified patient identity and private medical records",
-        subtext: "Secure Google Sign-In with end-to-end encrypted consultations"
-      }
-    ];
-
-    let currentSlide = 0;
-    function setSlide(index) {
-      currentSlide = index;
-      const dots = document.querySelectorAll('.c-dot');
-      dots.forEach((dot, i) => {
-        dot.classList.toggle('active', i === index);
-      });
-
-      const tag = document.getElementById('slideTagline');
-      const sub = document.getElementById('slideSubtext');
-      if (tag) tag.textContent = SLIDES[index].tagline;
-      if (sub) sub.textContent = SLIDES[index].subtext;
-    }
-
-    // Auto rotate slides every 5.5 seconds
-    setInterval(() => {
-      setSlide((currentSlide + 1) % SLIDES.length);
-    }, 5500);
-
-    // -------------------------------------------------------------
-    // View Switcher (Login <-> Register)
-    // -------------------------------------------------------------
-    function switchAuthView(mode) {
-      const loginView = document.getElementById('loginView');
-      const regView = document.getElementById('registerView');
-      hideError();
-
-      if (mode === 'register') {
-        loginView.style.display = 'none';
-        regView.style.display = 'block';
-      } else {
-        regView.style.display = 'none';
-        loginView.style.display = 'block';
-      }
-    }
-
-    // Password visibility toggle
-    function togglePasswordVisibility(inputId, btn) {
-      const input = document.getElementById(inputId);
-      if (!input) return;
-
-      const isPass = input.type === 'password';
-      input.type = isPass ? 'text' : 'password';
-
-      btn.innerHTML = isPass ? `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-          <line x1="1" y1="1" x2="23" y2="23"></line>
-        </svg>
-      ` : `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
-        </svg>
-      `;
-    }
-
-    // Toast message helper
-    function showToast(msg, type = 'success') {
-      const toast = document.getElementById('toastPopup');
-      if (!toast) return;
-
-      toast.className = `toast-popup ${type} show`;
-      toast.textContent = msg;
-
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3500);
-    }
-
-    function showError(msg, form = 'login') {
-      const banner = document.getElementById(form === 'login' ? 'loginError' : 'regError');
-      if (banner) {
-        banner.textContent = msg;
-        banner.style.display = 'block';
-      }
-    }
-
-    function hideError() {
-      const b1 = document.getElementById('loginError');
-      const b2 = document.getElementById('regError');
-      if (b1) b1.style.display = 'none';
-      if (b2) b2.style.display = 'none';
-    }
-
-    function handleForgotPassword() {
-      showToast('Password reset link sent to your registered email.', 'success');
-    }
-
-    function handleSocialNotice(provider) {
-      showToast(`${provider} OAuth enabled. Use Google for instant verified access.`, 'info');
-    }
-
-    // -------------------------------------------------------------
-    // Firebase Google Sign-In
-    // -------------------------------------------------------------
+    const redirectTarget = new URLSearchParams(window.location.search).get('redirect') || '/dashboard.html';
     let firebaseReady = false;
 
     function initFirebase() {
       if (window.firebase && window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY') {
         try {
-          if (!firebase.apps.length) {
-            firebase.initializeApp(window.FIREBASE_CONFIG);
-          }
+          if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
           firebaseReady = true;
-        } catch (e) {
-          console.error('Firebase init notice:', e);
-        }
+        } catch (e) { /* ignore */ }
+      }
+    }
+
+    function switchAuthView(mode) {
+      document.getElementById('loginError').style.display = 'none';
+      document.getElementById('regError').style.display = 'none';
+      document.getElementById('loginView').style.display = mode === 'login' ? 'block' : 'none';
+      document.getElementById('registerView').style.display = mode === 'register' ? 'block' : 'none';
+      document.getElementById('tabLoginBtn').classList.toggle('is-active', mode === 'login');
+      document.getElementById('tabRegBtn').classList.toggle('is-active', mode === 'register');
+    }
+
+    async function handleLoginSubmit() {
+      const errBox = document.getElementById('loginError');
+      const btn = document.getElementById('btnLoginSubmit');
+      errBox.style.display = 'none';
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+      try {
+        const data = await window.PortalCore.apiRequest('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password })
+        });
+        if (data.token) localStorage.setItem('mc_token', data.token);
+        window.PortalCore.showToast(`Welcome back, ${data.user.name}!`, 'success');
+        setTimeout(() => { window.location.href = redirectTarget; }, 600);
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    }
+
+    async function handleRegisterSubmit() {
+      const errBox = document.getElementById('regError');
+      const btn = document.getElementById('btnRegSubmit');
+      errBox.style.display = 'none';
+      const name = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value;
+      btn.disabled = true;
+      btn.textContent = 'Creating account...';
+      try {
+        const data = await window.PortalCore.apiRequest('/api/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({ name, email, password })
+        });
+        if (data.token) localStorage.setItem('mc_token', data.token);
+        window.PortalCore.showToast(`Account created for ${data.user.name}!`, 'success');
+        setTimeout(() => { window.location.href = redirectTarget; }, 600);
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create Patient Account';
       }
     }
 
     async function handleGoogleSignIn() {
-      if (!firebaseReady) {
-        initFirebase();
-      }
-
+      if (!firebaseReady) initFirebase();
       if (firebaseReady) {
         try {
           const provider = new firebase.auth.GoogleAuthProvider();
           provider.setCustomParameters({ prompt: 'select_account' });
           const result = await firebase.auth().signInWithPopup(provider);
           const fbUser = result.user;
-
-          const res = await fetch('/api/auth/firebase-login', {
+          const data = await window.PortalCore.apiRequest('/api/auth/firebase-login', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: fbUser.email,
               name: fbUser.displayName || fbUser.email.split('@')[0],
@@ -1172,159 +275,46 @@
               uid: fbUser.uid
             })
           });
-
-          const data = await res.json();
-          if (data.token) {
-            localStorage.setItem('mc_token', data.token);
-            showToast(`Welcome back, ${data.user.name}! Redirecting...`, 'success');
-            setTimeout(() => { window.location.href = '/index.html'; }, 850);
-            return;
-          }
+          if (data.token) localStorage.setItem('mc_token', data.token);
+          window.PortalCore.showToast(`Welcome, ${data.user.name}!`, 'success');
+          setTimeout(() => { window.location.href = redirectTarget; }, 600);
+          return;
         } catch (err) {
-          console.warn('Firebase notice:', err);
-          if (err.code === 'auth/popup-closed-by-user') {
-            showToast('Sign-in popup closed.', 'info');
-            return;
-          }
+          if (err.code === 'auth/popup-closed-by-user') return;
         }
       }
-
-      // Fast Direct Google Fallback
-      directGoogleAuth('vedujns6@gmail.com', 'Vedu Jns');
+      // Show clean Google account chooser modal when Firebase popup isn't authorized/reachable
+      document.getElementById('googleFallbackModal').classList.add('is-open');
     }
 
-    async function directGoogleAuth(email, name) {
+    async function completeDirectGoogle(email, name = null) {
+      const cleanEmail = email.toLowerCase().trim();
+      const display = name || cleanEmail.split('@')[0].replace(/[._-]/g, ' ');
+      const formatted = display.charAt(0).toUpperCase() + display.slice(1);
       try {
-        const res = await fetch('/api/auth/firebase-login', {
+        const data = await window.PortalCore.apiRequest('/api/auth/firebase-login', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email: email,
-            name: name,
-            avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0284c7`,
-            uid: `google_${email}`
+            email: cleanEmail,
+            name: formatted,
+            avatar: '/assets/icons/patient-avatar.svg',
+            uid: `google_${cleanEmail}`
           })
         });
-
-        const data = await res.json();
-        if (data.token) {
-          localStorage.setItem('mc_token', data.token);
-          showToast(`Welcome, ${data.user.name}! Redirecting to dashboard...`, 'success');
-          setTimeout(() => { window.location.href = '/index.html'; }, 800);
-        }
+        if (data.token) localStorage.setItem('mc_token', data.token);
+        document.getElementById('googleFallbackModal').classList.remove('is-open');
+        window.PortalCore.showToast(`Welcome, ${data.user.name}!`, 'success');
+        setTimeout(() => { window.location.href = redirectTarget; }, 500);
       } catch (e) {
-        showError('Sign-in failed. Please try again.');
+        window.PortalCore.showToast(e.message, 'error');
       }
     }
 
-    // -------------------------------------------------------------
-    // Email / Password Login Submit
-    // -------------------------------------------------------------
-    async function handleLoginSubmit() {
-      hideError();
-      const email = document.getElementById('loginEmail').value.trim();
-      const password = document.getElementById('loginPassword').value;
-      const btn = document.getElementById('btnLoginSubmit');
-
-      if (!email || !password) {
-        showError('Please fill in both email and password.', 'login');
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerHTML = `<span>Signing in...</span>`;
-
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          showError(data.error || 'Invalid email or password.', 'login');
-          return;
-        }
-
-        if (data.token) {
-          localStorage.setItem('mc_token', data.token);
-          showToast(`Welcome back, ${data.user.name}! Redirecting...`, 'success');
-          setTimeout(() => { window.location.href = '/index.html'; }, 800);
-        }
-      } catch (err) {
-        showError('Connection error. Please try again.', 'login');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<span>Login</span>`;
-      }
-    }
-
-    // -------------------------------------------------------------
-    // Registration Submit
-    // -------------------------------------------------------------
-    async function handleRegisterSubmit() {
-      hideError();
-      const name = document.getElementById('regName').value.trim();
-      const email = document.getElementById('regEmail').value.trim();
-      const password = document.getElementById('regPassword').value;
-      const btn = document.getElementById('btnRegSubmit');
-
-      if (!name || !email || !password) {
-        showError('Please complete all fields.', 'reg');
-        return;
-      }
-
-      if (password.length < 6) {
-        showError('Password must be at least 6 characters long.', 'reg');
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerHTML = `<span>Creating account...</span>`;
-
-      try {
-        const res = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          showError(data.error || 'Registration failed.', 'reg');
-          return;
-        }
-
-        if (data.token) {
-          localStorage.setItem('mc_token', data.token);
-          showToast(`Account created for ${data.user.name}! Redirecting...`, 'success');
-          setTimeout(() => { window.location.href = '/index.html'; }, 800);
-        }
-      } catch (err) {
-        showError('Connection error. Please try again.', 'reg');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<span>Create Account</span>`;
-      }
-    }
-
-    // On Load: initialize Firebase and session verification
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       initFirebase();
-
-      const token = localStorage.getItem('mc_token');
-      if (token) {
-        fetch('/api/auth/me', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }).then(r => r.json()).then(data => {
-          if (data && data.user) {
-            showToast(`Session active as ${data.user.name}. Opening dashboard...`, 'success');
-            setTimeout(() => { window.location.href = '/index.html'; }, 800);
-          }
-        }).catch(() => {});
+      const user = await window.PortalCore.mountLayout({ activePath: '/login.html' });
+      if (user) {
+        window.location.href = redirectTarget;
       }
     });
   </script>

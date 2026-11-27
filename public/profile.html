@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patient Profile – The Practitioner Medical Clinic</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/design-system/tokens.css" />
+  <link rel="stylesheet" href="/design-system/components.css" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <div id="siteHeader"></div>
+  <div id="portalSubnav"></div>
+
+  <main class="tp-section" style="padding-top:48px;">
+    <div class="tp-container tp-container--narrow">
+      <h1 style="font-size:clamp(36px, 4vw, 50px); margin-bottom:28px;">Patient Profile</h1>
+
+      <div class="tp-card tp-card--bordered" style="margin-bottom:28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px;">
+        <div style="display:flex; align-items:center; gap:20px;">
+          <img id="pAvatar" src="/assets/icons/patient-avatar.svg" alt="Patient Avatar" width="80" height="80" style="border-radius:50%; object-fit:cover; border:2px solid var(--tp-color-border);" />
+          <div>
+            <h2 id="pName" style="font-size:28px;">Loading...</h2>
+            <div id="pEmail" style="font-size:17px; color:var(--tp-color-primary);"></div>
+            <div id="pRole" style="font-size:14px; color:var(--tp-color-tertiary); margin-top:4px;"></div>
+            <div id="pProvider" style="font-size:13px; color:var(--tp-color-secondary); margin-top:4px;"></div>
+          </div>
+        </div>
+        <button type="button" class="tp-btn tp-btn--outline tp-btn--sm" onclick="window.PortalCore.logout()">Sign Out</button>
+      </div>
+
+      <div class="tp-card tp-card--cream">
+        <h3 style="margin-bottom:8px;">Personal Details &amp; Care Preferences</h3>
+        <p style="font-size:15px; margin-bottom:20px;">Changes are saved securely to your patient record and pre-fill future appointment bookings.</p>
+        <form class="tp-form-grid" id="profilePrefsForm">
+          <div class="tp-field">
+            <label class="tp-label" for="profName">Full Name *</label>
+            <input id="profName" type="text" class="tp-input" required minlength="2" maxlength="100" placeholder="Your full name" />
+          </div>
+          <div class="tp-field">
+            <label class="tp-label" for="profEmail">Account Email</label>
+            <input id="profEmail" type="email" class="tp-input" disabled readonly style="opacity:0.75; cursor:not-allowed;" />
+          </div>
+          <div class="tp-field">
+            <label class="tp-label" for="prefPhone">Primary Phone</label>
+            <input id="prefPhone" type="tel" class="tp-input" placeholder="+1 (555) 000-0000" />
+          </div>
+          <div class="tp-field">
+            <label class="tp-label" for="prefEmergency">Emergency Contact Name &amp; Phone</label>
+            <input id="prefEmergency" type="text" class="tp-input" placeholder="Contact name, phone" />
+          </div>
+          <div class="tp-field tp-field--full">
+            <label class="tp-label" for="prefAllergies">Known Allergies / Medical Notes</label>
+            <textarea id="prefAllergies" class="tp-textarea" placeholder="List allergies or chronic conditions to share during visits..."></textarea>
+          </div>
+          <div class="tp-field tp-field--full" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <button type="submit" id="saveProfileBtn" class="tp-btn tp-btn--accent tp-btn--sm">Save Profile Changes</button>
+            <span id="profileSavedStatus" style="font-size:14px; color:var(--tp-color-primary);"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <div id="siteFooter"></div>
+
+  <script src="/design-system/components.js"></script>
+  <script src="/js/portal-core.js"></script>
+  <script>
+    (async function () {
+      const initialUser = await window.PortalCore.mountLayout({ activePath: '/profile.html', requireUser: true });
+      if (!initialUser) return;
+
+      const profileRes = await window.PortalCore.apiRequest('/api/profile');
+      const user = profileRes.user || initialUser;
+      document.getElementById('portalSubnav').innerHTML = window.PortalCore.renderPortalSubnav('/profile.html', user);
+
+      function renderProfileCard(u) {
+        document.getElementById('pAvatar').src = u.avatar || '/assets/icons/patient-avatar.svg';
+        document.getElementById('pName').textContent = u.name;
+        document.getElementById('pEmail').textContent = u.email;
+        document.getElementById('pRole').textContent = `Patient ID: ${u.id} · Joined ${new Date(u.created_at).toLocaleDateString()}`;
+        const providerLabel = u.auth_provider === 'google' ? 'Google Sign-In' : 'Email & Password';
+        document.getElementById('pProvider').textContent = `Authentication Provider: ${providerLabel}`;
+      }
+
+      renderProfileCard(user);
+      document.getElementById('profName').value = user.name || '';
+      document.getElementById('profEmail').value = user.email || '';
+      document.getElementById('prefPhone').value = user.phone || '';
+      document.getElementById('prefEmergency').value = user.emergency_contact || '';
+      document.getElementById('prefAllergies').value = user.allergies || '';
+
+      // Migrate any legacy browser-only prefs if database fields are blank
+      const legacyKey = `tp_prefs_${user.id}`;
+      try {
+        const legacy = JSON.parse(localStorage.getItem(legacyKey) || '{}');
+        if (!user.phone && legacy.phone) document.getElementById('prefPhone').value = legacy.phone;
+        if (!user.emergency_contact && legacy.emergency) document.getElementById('prefEmergency').value = legacy.emergency;
+        if (!user.allergies && legacy.allergies) document.getElementById('prefAllergies').value = legacy.allergies;
+      } catch (e) { /* ignore */ }
+
+      document.getElementById('profilePrefsForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = document.getElementById('saveProfileBtn');
+        const statusEl = document.getElementById('profileSavedStatus');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+        statusEl.textContent = '';
+
+        try {
+          const res = await window.PortalCore.apiRequest('/api/profile', {
+            method: 'PUT',
+            body: JSON.stringify({
+              name: document.getElementById('profName').value.trim(),
+              phone: document.getElementById('prefPhone').value.trim(),
+              emergency_contact: document.getElementById('prefEmergency').value.trim(),
+              allergies: document.getElementById('prefAllergies').value.trim()
+            })
+          });
+          const updated = res.user;
+          renderProfileCard(updated);
+          document.getElementById('portalSubnav').innerHTML = window.PortalCore.renderPortalSubnav('/profile.html', updated);
+          localStorage.removeItem(legacyKey);
+          statusEl.textContent = updated.updated_at ? `Saved at ${new Date(updated.updated_at).toLocaleTimeString()}` : 'Saved';
+          window.PortalCore.showToast('Profile saved to your medical record.', 'success');
+        } catch (err) {
+          window.PortalCore.showToast(err.message, 'error');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Save Profile Changes';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

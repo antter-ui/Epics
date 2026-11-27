@@ -1,0 +1,310 @@
+/* ==========================================================================
+   The Practitioner – Design System Tokens
+   Authoritative Visual Reference: https://the-practitioner.cmsmasters.studio/
+   Extracted from post-43c1f9.css, post-4668ca1.css, post-364c1f9.css
+   ========================================================================== */
+
+@import url('/assets/fonts/fonts.css');
+
+:root {
+  /* ------------------------------------------------------------------------
+     1. Color Palette
+     ------------------------------------------------------------------------ */
+  --tp-color-primary: #527359;        /* Sage Forest Green */
+  --tp-color-primary-dark: #3f5a45;   /* Hover/active dark sage */
+  --tp-color-primary-soft: rgba(82, 115, 89, 0.1);
+
+  --tp-color-secondary: #333133;      /* Deep Charcoal (Headings) */
+  --tp-color-text: #5A595A;           /* Neutral Slate Gray (Body copy) */
+  --tp-color-tertiary: #656465;       /* Muted Gray (WCAG AA >= 5.3:1 on #FFFFFF and #FAF5F0) */
+  --tp-color-muted-ref: #656465;      /* Accessible muted metadata gray */
+
+  --tp-color-accent: #BED173;         /* Pistachio / Soft Lime */
+  --tp-color-accent-dark: #9cb249;    /* Accessible focus/border shade */
+
+  --tp-color-bg: #FFFFFF;             /* Pure White canvas */
+  --tp-color-alternate: #FAF5F0;      /* Warm Cream / Alabaster */
+  --tp-color-border: #E1DFDB;         /* Warm Stone border/divider */
+
+  --tp-color-blue: #88ABDA;           /* Soft Sky Blue highlight */
+  --tp-color-apricot: #EC9F57;        /* Warm Apricot accent */
+  --tp-color-navy: #08263F;           /* Deep Navy footer & dark CTA surface */
+  --tp-color-navy-soft: #103554;
+
+  /* Clinical Status Tokens (Harmonized with reference palette) */
+  --tp-status-confirmed-bg: #eef5ef;
+  --tp-status-confirmed-text: #2f4b35;
+  --tp-status-confirmed-border: #b8d1bd;
+
+  --tp-status-pending-bg: #fdf5ec;
+  --tp-status-pending-text: #8a4b12;
+  --tp-status-pending-border: #f3cfa8;
+
+  --tp-status-completed-bg: #eef4fb;
+  --tp-status-completed-text: #1c4470;
+  --tp-status-completed-border: #bfd5ef;
+
+  --tp-status-cancelled-bg: #fdf0f0;
+  --tp-status-cancelled-text: #8c2626;
+  --tp-status-cancelled-border: #f1c3c3;
+
+  /* ------------------------------------------------------------------------
+     2. Typography Scale
+     ------------------------------------------------------------------------ */
+  --tp-font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --tp-font-serif: 'Radley', Georgia, serif;
+
+  /* Desktop (>1024px) Sizes */
+  --tp-fs-h1: 82px;
+  --tp-lh-h1: 1.07;
+  --tp-ls-h1: -2px;
+
+  --tp-fs-h2: 58px;
+  --tp-lh-h2: 1.14;
+  --tp-ls-h2: -1px;
+
+  --tp-fs-h3: 46px;
+  --tp-lh-h3: 1.18;
+  --tp-ls-h3: -1px;
+
+  --tp-fs-h4: 34px;
+  --tp-lh-h4: 1.24;
+  --tp-ls-h4: 0px;
+
+  --tp-fs-h5: 24px;
+  --tp-lh-h5: 1.3;
+
+  --tp-fs-h6: 18px;
+  --tp-lh-h6: 1.33;
+
+  --tp-fs-body: 19px;
+  --tp-lh-body: 1.58;
+
+  --tp-fs-accent: 18px;
+  --tp-lh-accent: 1.66;
+
+  --tp-fs-small: 17px;
+  --tp-lh-small: 1.4;
+
+  --tp-fs-meta: 16px;
+  --tp-lh-meta: 1.32;
+
+  --tp-fs-taxonomy: 13px;
+  --tp-lh-taxonomy: 1.7;
+  --tp-ls-taxonomy: 1px;
+
+  --tp-fs-btn: 18px;
+  --tp-lh-btn: 1.44;
+
+  --tp-fs-blockquote: 28px;
+  --tp-lh-blockquote: 1.36;
+
+  --tp-fs-editorial: 24px;
+  --tp-lh-editorial: 1.33;
+
+  /* ------------------------------------------------------------------------
+     3. Spacing Scale & Container Widths
+     ------------------------------------------------------------------------ */
+  --tp-space-1: 4px;
+  --tp-space-2: 8px;
+  --tp-space-3: 12px;
+  --tp-space-4: 16px;
+  --tp-space-5: 20px;
+  --tp-space-6: 24px;
+  --tp-space-7: 30px;
+  --tp-space-8: 40px;
+  --tp-space-9: 50px;
+  --tp-space-10: 60px;
+  --tp-space-11: 80px;
+  --tp-space-12: 100px;
+  --tp-space-hero-top: 160px;
+
+  --tp-container-max: 1320px;
+  --tp-content-max: 1240px;
+  --tp-gutter: 30px;
+  --tp-section-py: 100px;
+  --tp-header-height: 88px;
+
+  /* ------------------------------------------------------------------------
+     4. Border-Radius & Shadow Standards
+     ------------------------------------------------------------------------ */
+  --tp-radius-sm: 5px;                /* Buttons & form inputs */
+  --tp-radius-md: 10px;               /* Compact chips/thumbs */
+  --tp-radius-card: 20px;             /* Bordered cards & media */
+  --tp-radius-lg: 50px;               /* Feature containers */
+  --tp-radius-leaf: 40% 0% 40% 0%;    /* Organic botanical image mask */
+  --tp-radius-pill-left: 300px 0 0 300px;
+  --tp-radius-full: 9999px;
+
+  /* Flat editorial layering primary; neutral elevation shadows for interactive popovers/modals */
+  --tp-shadow-none: none;
+  --tp-shadow-subtle: 0 6px 20px rgba(0, 0, 0, 0.05);
+  --tp-shadow-card-hover: 0 14px 32px rgba(0, 0, 0, 0.08);
+  --tp-shadow-dropdown: 0 16px 36px rgba(0, 0, 0, 0.1);
+  --tp-shadow-modal: 0 24px 60px rgba(0, 0, 0, 0.18);
+
+  /* ------------------------------------------------------------------------
+     5. Motion
+     ------------------------------------------------------------------------ */
+  --tp-transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  --tp-transition-fast: 0.18s ease;
+}
+
+/* Tablet Breakpoint (<= 1024px) */
+@media (max-width: 1024px) {
+  :root {
+    --tp-fs-h1: 64px;
+    --tp-fs-h2: 48px;
+    --tp-fs-h3: 38px;
+    --tp-fs-h4: 28px;
+    --tp-fs-h5: 20px;
+    --tp-fs-h6: 17px;
+    --tp-fs-body: 18px;
+    --tp-fs-accent: 17px;
+    --tp-fs-small: 16px;
+    --tp-fs-meta: 15px;
+    --tp-fs-btn: 17px;
+    --tp-fs-blockquote: 26px;
+    --tp-fs-editorial: 22px;
+
+    --tp-container-max: 1024px;
+    --tp-section-py: 80px;
+    --tp-space-hero-top: 140px;
+  }
+}
+
+/* Mobile Breakpoint (<= 767px) */
+@media (max-width: 767px) {
+  :root {
+    --tp-fs-h1: 46px;
+    --tp-ls-h1: -1px;
+    --tp-fs-h2: 38px;
+    --tp-fs-h3: 30px;
+    --tp-fs-h4: 24px;
+    --tp-fs-h5: 18px;
+    --tp-fs-h6: 16px;
+    --tp-fs-body: 17px;
+    --tp-fs-accent: 16px;
+    --tp-fs-small: 15px;
+    --tp-fs-meta: 14px;
+    --tp-fs-taxonomy: 12px;
+    --tp-fs-btn: 16px;
+    --tp-fs-blockquote: 24px;
+    --tp-fs-editorial: 20px;
+
+    --tp-container-max: 767px;
+    --tp-gutter: 20px;
+    --tp-section-py: 60px;
+    --tp-space-hero-top: 120px;
+  }
+}
+
+/* ==========================================================================
+   Base Reset & Editorial Typography Defaults
+   ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: clip;
+}
+
+body {
+  font-family: var(--tp-font-sans);
+  font-size: var(--tp-fs-body);
+  font-weight: 300;
+  line-height: var(--tp-lh-body);
+  color: var(--tp-color-text);
+  background-color: var(--tp-color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--tp-font-sans);
+  font-weight: 400;
+  color: var(--tp-color-secondary);
+}
+
+h1 { font-size: var(--tp-fs-h1); line-height: var(--tp-lh-h1); letter-spacing: var(--tp-ls-h1); }
+h2 { font-size: var(--tp-fs-h2); line-height: var(--tp-lh-h2); letter-spacing: var(--tp-ls-h2); }
+h3 { font-size: var(--tp-fs-h3); line-height: var(--tp-lh-h3); letter-spacing: var(--tp-ls-h3); }
+h4 { font-size: var(--tp-fs-h4); line-height: var(--tp-lh-h4); }
+h5 { font-size: var(--tp-fs-h5); line-height: var(--tp-lh-h5); }
+h6 { font-size: var(--tp-fs-h6); line-height: var(--tp-lh-h6); }
+
+p {
+  margin-bottom: var(--tp-space-5);
+}
+p:last-child {
+  margin-bottom: 0;
+}
+
+a {
+  color: var(--tp-color-primary);
+  text-decoration: none;
+  transition: var(--tp-transition);
+}
+a:hover {
+  color: var(--tp-color-tertiary);
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+.tp-container {
+  width: 100%;
+  max-width: var(--tp-container-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--tp-gutter);
+  padding-right: var(--tp-gutter);
+}
+
+.tp-container--narrow {
+  max-width: var(--tp-content-max);
+}
+
+.tp-section {
+  padding-top: var(--tp-section-py);
+  padding-bottom: var(--tp-section-py);
+  position: relative;
+}
+
+.tp-section--cream {
+  background-color: var(--tp-color-alternate);
+}
+
+.tp-section--navy {
+  background-color: var(--tp-color-navy);
+  color: var(--tp-color-bg);
+}
+
+.tp-serif-italic {
+  font-family: var(--tp-font-serif);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Design System – The Practitioner Medical Reconstruction</title>
+  <link rel="stylesheet" href="/design-system/tokens.css" />
+  <link rel="stylesheet" href="/design-system/components.css" />
+  <style>
+    .ds-swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 20px;
+    }
+    .ds-swatch {
+      border: 1px solid var(--tp-color-border);
+      border-radius: var(--tp-radius-card);
+      overflow: hidden;
+      background: var(--tp-color-bg);
+    }
+    .ds-swatch__color {
+      height: 88px;
+      border-bottom: 1px solid var(--tp-color-border);
+    }
+    .ds-swatch__meta {
+      padding: 14px 16px;
+      font-size: 15px;
+    }
+    .ds-swatch__hex {
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--tp-color-tertiary);
+    }
+    .ds-type-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--tp-color-border);
+      flex-wrap: wrap;
+    }
+    .ds-type-spec {
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--tp-color-tertiary);
+      min-width: 240px;
+    }
+    .ds-btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Reusable Header Component Mount -->
+  <div id="dsHeaderMount"></div>
+
+  <main>
+    <!-- Hero Intro -->
+    <section class="tp-section tp-section--cream" style="position:relative; overflow:hidden;">
+      <img src="/assets/backgrounds/hero-curve-line.svg" alt="" style="position:absolute; right:0; top:20px; pointer-events:none; opacity:0.9;" />
+      <div class="tp-container" style="position:relative; z-index:2;">
+        <h1>The Practitioner UI System</h1>
+        <p class="tp-section-heading__subtitle" style="margin-top:18px;">
+          Phase 3 Design System: reusable visual tokens, responsive typography, organic botanical surfaces, and modular clinical components derived directly from the reference theme.
+        </p>
+        <div class="ds-btn-row" style="margin-top:28px;">
+          <a href="#palette" class="tp-btn tp-btn--accent">Explore Tokens</a>
+          <a href="#components" class="tp-btn tp-btn--outline">Inspect Components</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. Color Palette -->
+    <section class="tp-section" id="palette">
+      <div class="tp-container">
+        <div id="dsPaletteHeading"></div>
+        <div class="ds-swatch-grid">
+          <div class="ds-swatch"><div class="ds-swatch__color" style="background:#527359;"></div><div class="ds-swatch__meta"><strong>Primary Sage</strong><div class="ds-swatch__hex">#527359</div></div></div>
+          <div class="ds-swatch"><div class="ds-swatch__color" style="background:#BED173;"></div><div class="ds-swatch__meta"><strong>Accent Pistachio</strong><div class="ds-swatch__hex">#BED173</div></div></div>
+          <div class="ds-swatch"><div class="ds-swatch__color" style="background:#333133;"></div><div class="ds-swatch__meta"><strong>Secondary Charcoal</strong><div class="ds-swatch__hex">#333133</div></div></div>
+          <div class="ds-swatch"><div class="ds-swatch__color" style="background:#5A595A;"></div><div class="ds-swatch__meta"><strong>Body Text Slate</strong><div class="ds-swatch__hex">#5A595A</div></div></div>
+          <div class="ds-swatch"><div class="ds-swatch__color" style="background:#FAF5F0;"></div><div class="ds-swatch__meta"><strong>Alternate Cream</strong><div class="ds-swatch__hex">#FAF5F0</div></div></div>
+          <div class="ds-swatch"><div class="ds-swatch__color" style="background:#E1DFDB;"></div><div class="ds-swatch__meta"><strong>Border Stone</strong><div class="ds-swatch__hex">#E1DFDB</div></div></div>
+          <div class="ds-swatch"><div class="ds-swatch__color" style="background:#08263F;"></div><div class="ds-swatch__meta"><strong>Deep Navy Footer</strong><div class="ds-swatch__hex">#08263F</div></div></div>
+          <div class="ds-swatch"><div class="ds-swatch__color" style="background:#EC9F57;"></div><div class="ds-swatch__meta"><strong>Warm Apricot</strong><div class="ds-swatch__hex">#EC9F57</div></div></div>
+          <div class="ds-swatch"><div class="ds-swatch__color" style="background:#88ABDA;"></div><div class="ds-swatch__meta"><strong>Soft Sky Blue</strong><div class="ds-swatch__hex">#88ABDA</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Typography Scale -->
+    <section class="tp-section tp-section--cream" id="typography">
+      <div class="tp-container">
+        <div id="dsTypeHeading"></div>
+        <div class="tp-card tp-card--bordered">
+          <div class="ds-type-row"><h1>Heading H1</h1><span class="ds-type-spec">Outfit 400 · 82px / 64px / 46px</span></div>
+          <div class="ds-type-row"><h2>Heading H2</h2><span class="ds-type-spec">Outfit 400 · 58px / 48px / 38px</span></div>
+          <div class="ds-type-row"><h3>Heading H3</h3><span class="ds-type-spec">Outfit 400 · 46px / 38px / 30px</span></div>
+          <div class="ds-type-row"><h4>Heading H4</h4><span class="ds-type-spec">Outfit 400 · 34px / 28px / 24px</span></div>
+          <div class="ds-type-row"><h5>Heading H5</h5><span class="ds-type-spec">Outfit 400 · 24px / 20px / 18px</span></div>
+          <div class="ds-type-row"><span class="tp-serif-italic" style="font-size:28px; color:var(--tp-color-secondary);">Editorial Blockquote (Radley Italic)</span><span class="ds-type-spec">Radley Italic 400 · 28px / 26px / 24px</span></div>
+          <div class="ds-type-row" style="border-bottom:none;"><p style="max-width:560px;">Body copy uses Outfit Light (300) at 19px desktop, 18px tablet, and 17px mobile with 1.58 line-height for calm clinical readability.</p><span class="ds-type-spec">Outfit 300 · 19px / 18px / 17px</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Buttons & Cards -->
+    <section class="tp-section" id="components">
+      <div class="tp-container">
+        <div id="dsButtonsHeading"></div>
+        <div class="tp-card tp-card--bordered" style="margin-bottom:40px;">
+          <div class="ds-btn-row" id="dsButtonDemo"></div>
+        </div>
+
+        <div class="tp-blockquote-card" style="margin-bottom:56px;">
+          <blockquote class="tp-blockquote-card__quote">
+            “Dr. Martin helped me overcome my illness and maintain a happy and healthy life through personalized, root-cause care.”
+          </blockquote>
+          <cite class="tp-blockquote-card__cite">— Patient Testimonial Blockquote Component</cite>
+        </div>
+
+        <div id="dsServicesHeading"></div>
+        <div class="tp-services-grid" id="dsServicesGrid" style="margin-bottom:80px;"></div>
+
+        <div id="dsDoctorsHeading"></div>
+        <div class="tp-doctors-grid" id="dsDoctorsGrid"></div>
+      </div>
+    </section>
+
+    <!-- 4. Reusable Appointment Form -->
+    <section class="tp-section tp-section--cream" id="appointment-form">
+      <div class="tp-container tp-container--narrow">
+        <div id="dsFormHeading"></div>
+        <div class="tp-card tp-card--bordered" id="dsFormMount"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="dsFooterMount"></div>
+
+  <script src="/design-system/components.js"></script>
+  <script>
+    (async function () {
+      const UI = window.PractitionerUI;
+      document.getElementById('dsHeaderMount').innerHTML = UI.renderHeader({ activePath: '/design-system/' });
+      document.getElementById('dsFooterMount').innerHTML = UI.renderFooter();
+      UI.initInteractions();
+
+      document.getElementById('dsPaletteHeading').innerHTML = UI.renderSectionHeading({
+        title: 'Reference Color Palette',
+        subtitle: 'Warm cream, sage green, pistachio accent, and deep navy tokens.'
+      });
+      document.getElementById('dsTypeHeading').innerHTML = UI.renderSectionHeading({
+        title: 'Outfit & Radley Typography Scale'
+      });
+      document.getElementById('dsButtonsHeading').innerHTML = UI.renderSectionHeading({
+        title: 'Interactive Controls, Blockquotes & Cards'
+      });
+      document.getElementById('dsButtonDemo').innerHTML = [
+        UI.renderButton({ label: 'Book Consultation (Accent)', variant: 'accent' }),
+        UI.renderButton({ label: 'Primary Sage', variant: 'primary' }),
+        UI.renderButton({ label: 'Outline Button', variant: 'outline' }),
+        UI.renderButton({ label: 'Read More →', variant: 'link' }),
+        UI.renderButton({ label: 'Small CTA', variant: 'accent', size: 'sm' })
+      ].join('');
+
+      document.getElementById('dsServicesHeading').innerHTML = UI.renderSectionHeading({
+        title: 'Medical Service Cards (3 -> 2 -> 1)'
+      });
+      document.getElementById('dsDoctorsHeading').innerHTML = UI.renderSectionHeading({
+        title: 'Specialist Doctor Profile Cards (1:1 Portraits)'
+      });
+      document.getElementById('dsFormHeading').innerHTML = UI.renderSectionHeading({
+        title: 'Reusable Patient Appointment Form',
+        align: 'center'
+      });
+
+      let departments = [];
+      let doctors = [];
+      try {
+        const [deptRes, docRes] = await Promise.all([
+          fetch('/api/departments').then(r => r.ok ? r.json() : { departments: [] }),
+          fetch('/api/doctors').then(r => r.ok ? r.json() : { doctors: [] })
+        ]);
+        departments = (deptRes.departments || []).slice(0, 3);
+        doctors = (docRes.doctors || []).slice(0, 3);
+      } catch (e) { /* Static fallback below */ }
+
+      if (departments.length === 0) {
+        departments = [
+          { id: 1, name: 'Cardiology', tagline: 'Heart & Vascular Care', description: 'Preventive diagnostics and treatment for cardiovascular health.' },
+          { id: 2, name: 'Dermatology', tagline: 'Clinical Skin Care', description: 'Comprehensive dermatology for skin allergies, eczema, and wellness.' },
+          { id: 3, name: 'General Medicine', tagline: 'Primary Care', description: 'Frontline primary care, preventive screenings, and chronic support.' }
+        ];
+      }
+      if (doctors.length === 0) {
+        doctors = [
+          { id: 1, name: 'Dr. Robert Harrison', department_name: 'Cardiology', qualification: 'MD, FACC, Harvard Medical School', bio: 'Preventive cardiology and advanced cardiac echocardiography.', rating: 4.9, reviews_count: 342, experience_years: 18, consultation_fee: 150, avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=768&h=768&fit=crop&crop=face' },
+          { id: 3, name: 'Dr. Elena Rostova', department_name: 'Dermatology', qualification: 'MD, Stanford Fellowship', bio: 'Clinical dermatology, autoimmune skin conditions, and diagnostics.', rating: 4.9, reviews_count: 415, experience_years: 14, consultation_fee: 120, avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=768&h=768&fit=crop&crop=face' },
+          { id: 7, name: 'Dr. William Chen', department_name: 'General Medicine', qualification: 'MD, Yale University', bio: 'Diagnostic puzzles, metabolic care, and comprehensive health screenings.', rating: 4.9, reviews_count: 480, experience_years: 16, consultation_fee: 95, avatar: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=768&h=768&fit=crop&crop=face' }
+        ];
+      }
+
+      document.getElementById('dsServicesGrid').innerHTML = departments.map(d => UI.renderServiceCard(d)).join('');
+      document.getElementById('dsDoctorsGrid').innerHTML = doctors.map(doc => UI.renderDoctorCard(doc)).join('');
+      document.getElementById('dsFormMount').innerHTML = UI.renderAppointmentForm({ departments, doctors });
+
+      document.querySelectorAll('.tp-slot-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tp-slot-btn').forEach(b => b.classList.remove('is-selected'));
+          btn.classList.add('is-selected');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
