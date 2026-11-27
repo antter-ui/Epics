@@ -67,6 +67,54 @@
     return data;
   }
 
+  const REMEMBERED_ACCOUNTS_KEY = 'mc_remembered_accounts';
+
+  function getRememberedAccounts() {
+    try {
+      const raw = localStorage.getItem(REMEMBERED_ACCOUNTS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter(a => a && typeof a.email === 'string' && a.email.includes('@'));
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function rememberAccount(user, providerOverride = null) {
+    if (!user || !user.email) return;
+    try {
+      const email = String(user.email).trim().toLowerCase();
+      const existing = getRememberedAccounts();
+      const prev = existing.find(a => a.email === email);
+      const cleanAvatar = user.avatar && !String(user.avatar).includes('patient-avatar.svg') ? String(user.avatar) : (prev ? prev.avatar : '');
+      const provider = providerOverride || (prev && prev.provider) || user.auth_provider || 'email';
+      const entry = {
+        email,
+        name: String(user.name || (prev && prev.name) || email.split('@')[0]).trim(),
+        avatar: cleanAvatar,
+        provider: provider === 'google' ? 'google' : 'email',
+        lastUsedAt: Date.now()
+      };
+      const updated = [entry, ...existing.filter(a => a.email !== email)].slice(0, 4);
+      localStorage.setItem(REMEMBERED_ACCOUNTS_KEY, JSON.stringify(updated));
+    } catch (e) { /* ignore storage quota errors */ }
+  }
+
+  function clearRememberedAccounts(email = null) {
+    try {
+      if (!email) {
+        localStorage.removeItem(REMEMBERED_ACCOUNTS_KEY);
+        return [];
+      }
+      const target = String(email).trim().toLowerCase();
+      const filtered = getRememberedAccounts().filter(a => a.email !== target);
+      localStorage.setItem(REMEMBERED_ACCOUNTS_KEY, JSON.stringify(filtered));
+      return filtered;
+    } catch (e) {
+      return [];
+    }
+  }
+
   function getCachedUser() {
     try {
       const raw = sessionStorage.getItem('mc_user_cache');
@@ -76,10 +124,14 @@
     }
   }
 
-  function setCachedUser(user) {
+  function setCachedUser(user, providerOverride = null) {
     try {
-      if (user) sessionStorage.setItem('mc_user_cache', JSON.stringify(user));
-      else sessionStorage.removeItem('mc_user_cache');
+      if (user) {
+        sessionStorage.setItem('mc_user_cache', JSON.stringify(user));
+        rememberAccount(user, providerOverride);
+      } else {
+        sessionStorage.removeItem('mc_user_cache');
+      }
     } catch (e) { /* ignore */ }
   }
 
@@ -111,6 +163,256 @@
       await apiRequest('/api/auth/logout', { method: 'POST' });
     } catch (e) { /* ignore */ }
     window.location.href = '/login.html';
+  }
+
+  let sharedFirebaseLoadPromise = null;
+
+  function loadScriptOnce(src) {
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[src="${src}"]`);
+      if (existing) {
+        if (existing.dataset.loaded === '1') return resolve();
+        existing.addEventListener('load', resolve, { once: true });
+        existing.addEventListener('error', reject, { once: true });
+        return;
+      }
+      const s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      s.addEventListener('load', () => { s.dataset.loaded = '1'; resolve(); }, { once: true });
+      s.addEventListener('error', reject, { once: true });
+      document.head.appendChild(s);
+    });
+  }
+
+  async function ensureFirebaseReady() {
+    if (!global.FIREBASE_CONFIG) {
+      await loadScriptOnce('/firebase-config.js');
+    }
+    if (global.firebase && global.FIREBASE_CONFIG && global.FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY') {
+      if (!global.firebase.apps.length) global.firebase.initializeApp(global.FIREBASE_CONFIG);
+      return true;
+    }
+    if (!sharedFirebaseLoadPromise) {
+      sharedFirebaseLoadPromise = (async () => {
+        await loadScriptOnce('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+        await loadScriptOnce('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
+        if (global.firebase && global.FIREBASE_CONFIG && global.FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY') {
+          if (!global.firebase.apps.length) global.firebase.initializeApp(global.FIREBASE_CONFIG);
+          return true;
+        }
+        return false;
+      })().catch(err => {
+        sharedFirebaseLoadPromise = null;
+        throw err;
+      });
+    }
+    return sharedFirebaseLoadPromise;
+  }
+
+  async function exchangeFirebaseUser(fbUser) {
+    const idToken = await fbUser.getIdToken();
+    const data = await apiRequest('/api/auth/firebase-login', {
+      method: 'POST',
+      body: JSON.stringify({ idToken })
+    });
+    if (data.token) localStorage.setItem('mc_token', data.token);
+    if (data.user) setCachedUser(data.user, 'google');
+    return data.user || null;
+  }
+
+  async function signInWithGoogleHint(emailHint = '', { redirectTo = '', forceChooser = false, onVerifying = null } = {}) {
+    if (typeof onVerifying === 'function') onVerifying();
+    const ready = await ensureFirebaseReady();
+    if (!ready || !global.firebase || typeof global.firebase.auth !== 'function') {
+      throw new Error('Google Sign-In configuration is unavailable.');
+    }
+
+    const authInstance = global.firebase.auth();
+    const targetEmail = String(emailHint || '').trim().toLowerCase();
+
+    // Instant returning-user path: reuse cached Firebase Google user session when it matches the clicked account
+    if (targetEmail && !forceChooser) {
+      const currentFbUser = await new Promise(resolve => {
+        if (authInstance.currentUser) return resolve(authInstance.currentUser);
+        const timer = setTimeout(() => resolve(authInstance.currentUser), 450);
+        const unsub = authInstance.onAuthStateChanged(u => {
+          clearTimeout(timer);
+          unsub();
+          resolve(u);
+        });
+      });
+
+      if (currentFbUser && currentFbUser.email && currentFbUser.email.toLowerCase() === targetEmail) {
+        try {
+          const user = await exchangeFirebaseUser(currentFbUser);
+          if (redirectTo) window.location.href = redirectTo;
+          return user;
+        } catch (silentErr) {
+          // Fall through cleanly to interactive popup if cached token expired/revoked
+        }
+      }
+    }
+
+    const provider = new global.firebase.auth.GoogleAuthProvider();
+    const customParams = {};
+    if (targetEmail && !forceChooser) {
+      customParams.login_hint = targetEmail;
+    } else {
+      customParams.prompt = 'select_account';
+    }
+    provider.setCustomParameters(customParams);
+
+    try {
+      const result = await authInstance.signInWithPopup(provider);
+      if (result && result.user) {
+        const user = await exchangeFirebaseUser(result.user);
+        if (redirectTo) window.location.href = redirectTo;
+        return user;
+      }
+      return null;
+    } catch (err) {
+      const redirectFallbackCodes = [
+        'auth/popup-blocked',
+        'auth/cancelled-popup-request',
+        'auth/operation-not-supported-in-this-environment'
+      ];
+      if (err && redirectFallbackCodes.includes(err.code)) {
+        sessionStorage.setItem('tp_fb_redirect_pending', '1');
+        if (redirectTo) sessionStorage.setItem('tp_fb_redirect_target', redirectTo);
+        await authInstance.signInWithRedirect(provider);
+        return null;
+      }
+      throw err;
+    }
+  }
+
+  function renderAvatarHtml(acc, sizePx = 38, altIndex = 0) {
+    const initial = esc((acc.name || acc.email || 'P').trim().charAt(0).toUpperCase());
+    if (acc.avatar) {
+      return `<span class="tp-onetap-avatar" style="width:${sizePx}px;height:${sizePx}px;font-size:${Math.round(sizePx * 0.44)}px;"><img src="${esc(acc.avatar)}" alt="" referrerpolicy="no-referrer" /></span>`;
+    }
+    const altCls = altIndex % 2 === 1 ? ' tp-onetap-avatar--alt' : '';
+    return `<span class="tp-onetap-avatar${altCls}" style="width:${sizePx}px;height:${sizePx}px;font-size:${Math.round(sizePx * 0.44)}px;">${initial}</span>`;
+  }
+
+  function mountReturningPrompt({ activePath = '' } = {}) {
+    if (activePath === '/login.html' || window.location.pathname === '/login.html') return;
+    if (document.getElementById('tpOneTapPrompt')) return;
+    if (sessionStorage.getItem('tp_onetap_dismissed') === '1') return;
+
+    const accounts = getRememberedAccounts();
+    if (!accounts.length) return;
+
+    const promptEl = document.createElement('aside');
+    promptEl.id = 'tpOneTapPrompt';
+    promptEl.className = 'tp-onetap-prompt';
+    promptEl.setAttribute('aria-label', 'Returning patient quick sign-in');
+
+    function renderDefaultList(errMsg = '') {
+      promptEl.innerHTML = `
+        <div class="tp-onetap-head">
+          <div class="tp-onetap-brand">
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span>Sign in to The Practitioner</span>
+          </div>
+          <button type="button" class="tp-onetap-close" id="tpOneTapClose" aria-label="Dismiss quick sign-in suggestion">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="tp-onetap-progress" aria-hidden="true"><div class="tp-onetap-progress__bar"></div></div>
+        <div class="tp-onetap-list">
+          ${accounts.slice(0, 3).map((acc, idx) => `
+            <button type="button" class="tp-onetap-account" data-onetap-email="${esc(acc.email)}">
+              ${renderAvatarHtml(acc, 38, idx)}
+              <div class="tp-onetap-meta">
+                <div class="tp-onetap-name">${esc(acc.name)}</div>
+                <div class="tp-onetap-email">${esc(acc.email)}</div>
+              </div>
+              <span class="tp-onetap-badge">${acc.provider === 'google' ? 'Google' : 'Continue'}</span>
+            </button>
+          `).join('')}
+        </div>
+        ${errMsg ? `<div class="tp-onetap-err">${esc(errMsg)}</div>` : ''}
+        <div class="tp-onetap-foot">
+          <span>Saved on this browser</span>
+          <a href="/login.html?other=1" class="tp-onetap-link">Use another account</a>
+        </div>
+      `;
+
+      promptEl.querySelector('#tpOneTapClose').addEventListener('click', () => {
+        sessionStorage.setItem('tp_onetap_dismissed', '1');
+        promptEl.remove();
+      });
+
+      promptEl.querySelectorAll('[data-onetap-email]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const email = btn.getAttribute('data-onetap-email');
+          const acc = accounts.find(a => a.email === email);
+          if (!acc) return;
+
+          if (acc.provider !== 'google') {
+            window.location.href = `/login.html?email=${encodeURIComponent(acc.email)}&quick=1`;
+            return;
+          }
+
+          promptEl.innerHTML = `
+            <div class="tp-onetap-head">
+              <div class="tp-onetap-brand">
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                <span>Verifying...</span>
+              </div>
+              <button type="button" class="tp-onetap-close" id="tpOneTapVerifyClose" aria-label="Cancel">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div class="tp-onetap-progress is-active" aria-hidden="true"><div class="tp-onetap-progress__bar"></div></div>
+            <div class="tp-onetap-list">
+              <div class="tp-onetap-account" style="cursor:default;">
+                ${renderAvatarHtml(acc, 38, 0)}
+                <div class="tp-onetap-meta">
+                  <div class="tp-onetap-name">${esc(acc.name)}</div>
+                  <div class="tp-onetap-email">${esc(acc.email)}</div>
+                </div>
+              </div>
+            </div>
+          `;
+          promptEl.querySelector('#tpOneTapVerifyClose').addEventListener('click', () => {
+            sessionStorage.setItem('tp_onetap_dismissed', '1');
+            promptEl.remove();
+          });
+
+          try {
+            const signedInUser = await signInWithGoogleHint(acc.email);
+            if (signedInUser) {
+              promptEl.remove();
+              const slot = document.getElementById('tpHeaderAuthSlot');
+              if (slot) {
+                slot.innerHTML = `<a href="/dashboard.html" class="tp-btn tp-btn--outline tp-btn--sm" style="padding:8px 16px;">${esc(signedInUser.name.split(' ')[0])} &middot; Portal</a>`;
+              }
+              showToast(`Welcome back, ${signedInUser.name}!`);
+            }
+          } catch (err) {
+            renderDefaultList(err && err.code === 'auth/popup-closed-by-user'
+              ? 'Sign-in popup closed. Click an account to try again.'
+              : (err && err.message) || 'Could not complete Google Sign-In.');
+          }
+        });
+      });
+    }
+
+    renderDefaultList();
+    document.body.appendChild(promptEl);
   }
 
   function enrichDepartment(dept) {
@@ -240,7 +542,12 @@
               : `<a href="/login.html" class="tp-btn tp-btn--outline tp-btn--sm" style="padding:8px 16px;">Patient Login</a>`;
           }
         }
+        if (!freshUser) {
+          mountReturningPrompt({ activePath });
+        }
       });
+    } else {
+      mountReturningPrompt({ activePath });
     }
 
     return cachedUser;
@@ -274,11 +581,18 @@
     formatDate,
     showToast,
     apiRequest,
+    getRememberedAccounts,
+    rememberAccount,
+    clearRememberedAccounts,
     getCachedUser,
     setCachedUser,
     getCurrentUser,
     requireAuth,
     logout,
+    ensureFirebaseReady,
+    signInWithGoogleHint,
+    renderAvatarHtml,
+    mountReturningPrompt,
     enrichDepartment,
     addToGoogleCalendar,
     printAppointmentSlip,

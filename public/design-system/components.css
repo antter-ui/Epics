@@ -963,3 +963,269 @@
   font-size: 15px;
   color: rgba(255, 255, 255, 0.65);
 }
+
+/* --------------------------------------------------------------------------
+   Returning-User Quick Sign-In Prompt (Floating One-Tap Style)
+   -------------------------------------------------------------------------- */
+.tp-onetap-prompt {
+  position: fixed;
+  top: 96px;
+  right: 20px;
+  width: min(372px, calc(100vw - 24px));
+  background-color: var(--tp-color-bg);
+  border: 1px solid var(--tp-color-border);
+  border-radius: 14px;
+  box-shadow: var(--tp-shadow-dropdown);
+  z-index: 1050;
+  overflow: hidden;
+  animation: tpOneTapSlideIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes tpOneTapSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tp-onetap-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px 11px;
+  border-bottom: 1px solid var(--tp-color-border);
+  background-color: var(--tp-color-alternate);
+}
+
+.tp-onetap-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--tp-color-secondary);
+}
+
+.tp-onetap-brand span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-onetap-close {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--tp-radius-full);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--tp-color-tertiary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.tp-onetap-close:hover {
+  background-color: rgba(8, 38, 63, 0.08);
+  color: var(--tp-color-secondary);
+}
+
+.tp-onetap-close:focus-visible {
+  outline: 2px solid var(--tp-color-primary);
+  outline-offset: 2px;
+}
+
+.tp-onetap-progress {
+  position: relative;
+  height: 3px;
+  width: 100%;
+  background-color: var(--tp-color-border);
+  overflow: hidden;
+  display: none;
+}
+
+.tp-onetap-progress.is-active {
+  display: block;
+}
+
+.tp-onetap-progress__bar {
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--tp-color-primary), var(--tp-color-accent-dark));
+  animation: tpOneTapBar 1.15s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes tpOneTapBar {
+  0% {
+    left: -45%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.tp-onetap-list {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tp-onetap-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background-color: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.tp-onetap-account:hover {
+  background-color: var(--tp-color-alternate);
+  border-color: var(--tp-color-border);
+}
+
+.tp-onetap-account:focus-visible {
+  outline: 2px solid var(--tp-color-primary);
+  outline-offset: 1px;
+}
+
+.tp-onetap-account[disabled] {
+  cursor: wait;
+  opacity: 0.85;
+}
+
+.tp-onetap-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--tp-radius-full);
+  background-color: var(--tp-color-primary);
+  color: var(--tp-color-bg);
+  font-size: 16px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid rgba(8, 38, 63, 0.08);
+}
+
+.tp-onetap-avatar--alt {
+  background-color: var(--tp-color-navy);
+}
+
+.tp-onetap-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tp-onetap-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.tp-onetap-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tp-color-secondary);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-onetap-email {
+  font-size: 13px;
+  color: var(--tp-color-tertiary);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-onetap-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tp-color-primary-dark);
+  background-color: var(--tp-status-confirmed-bg);
+  border: 1px solid var(--tp-status-confirmed-border);
+  border-radius: var(--tp-radius-full);
+  padding: 3px 9px;
+  flex-shrink: 0;
+}
+
+.tp-onetap-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px 11px;
+  border-top: 1px solid var(--tp-color-border);
+  font-size: 12.5px;
+  color: var(--tp-color-tertiary);
+}
+
+.tp-onetap-link {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--tp-color-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tp-onetap-link:hover {
+  color: var(--tp-color-primary-dark);
+}
+
+.tp-onetap-err {
+  margin: 0 12px 10px;
+  padding: 8px 10px;
+  border-radius: var(--tp-radius-sm);
+  background: var(--tp-status-cancelled-bg);
+  color: var(--tp-status-cancelled-text);
+  border: 1px solid var(--tp-status-cancelled-border);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+@media (max-width: 640px) {
+  .tp-onetap-prompt {
+    top: 82px;
+    right: 12px;
+    width: calc(100vw - 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tp-onetap-prompt {
+    animation: none;
+  }
+  .tp-onetap-progress__bar {
+    animation: none;
+    left: 0;
+    width: 100%;
+  }
+}
