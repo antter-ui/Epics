@@ -3,12 +3,26 @@
 const { DatabaseSync } = require('node:sqlite');
 const path = require('node:path');
 const fs = require('node:fs');
+const os = require('node:os');
 const crypto = require('node:crypto');
 
-const dbPath = path.join(__dirname, '..', 'data', 'healthcare.db');
+const isServerless = Boolean(
+  process.env.VERCEL ||
+  process.env.VERCEL_ENV ||
+  process.env.AWS_LAMBDA_FUNCTION_NAME
+);
+const repoDbPath = path.join(__dirname, '..', 'data', 'healthcare.db');
+const dbPath = isServerless ? path.join(os.tmpdir(), 'healthcare.db') : repoDbPath;
 const dbDir = path.dirname(dbPath);
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
+}
+if (isServerless && !fs.existsSync(dbPath) && fs.existsSync(repoDbPath)) {
+  try {
+    fs.copyFileSync(repoDbPath, dbPath);
+  } catch (e) {
+    // Fallback to fresh SQLite database initialization in /tmp
+  }
 }
 
 const db = new DatabaseSync(dbPath);

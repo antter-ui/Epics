@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Modern Healthcare Appointment Booking Platform with Google Authentication",
   "main": "server/server.js",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "start": "node.bat server/server.js",
     "test": "node.bat test-server.js"

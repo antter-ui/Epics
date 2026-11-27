@@ -51,8 +51,27 @@ function sendJson(res, statusCode, data, headers = {}) {
   res.end(json);
 }
 
-// Helper to parse incoming request body
+// Helper to parse incoming request body (supports raw streams and pre-parsed Vercel serverless bodies)
 function parseBody(req) {
+  if (req.body !== undefined) {
+    if (typeof req.body === 'string') {
+      try {
+        return Promise.resolve(req.body ? JSON.parse(req.body) : {});
+      } catch (err) {
+        return Promise.reject(new Error('Invalid JSON'));
+      }
+    }
+    if (Buffer.isBuffer(req.body)) {
+      try {
+        const txt = req.body.toString('utf8');
+        return Promise.resolve(txt ? JSON.parse(txt) : {});
+      } catch (err) {
+        return Promise.reject(new Error('Invalid JSON'));
+      }
+    }
+    return Promise.resolve(req.body || {});
+  }
+
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', chunk => {
@@ -82,7 +101,7 @@ async function handleApiRequest(req, res) {
 
   // Global CORS headers for API
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (method === 'OPTIONS') {
