@@ -398,20 +398,16 @@ async function runTests() {
     assert.strictEqual(googleRes.data.user.auth_provider, 'google');
     assert.strictEqual(googleRes.data.user.email, googleEmail);
 
-    const fbRes = await makeRequest({
+    const fbUnverifiedRes = await makeRequest({
       method: 'POST',
       path: '/api/auth/firebase-login',
       body: {
         email: `fb_${Date.now()}@gmail.com`,
-        name: 'Morgan Hayes',
-        uid: `fb_uid_${Date.now()}`,
-        avatar: '/assets/icons/patient-avatar.svg'
+        name: 'Unverified Client Spoof'
       }
     });
-    assert.strictEqual(fbRes.status, 200, 'Firebase login endpoint should return 200');
-    assert.strictEqual(fbRes.data.user.auth_provider, 'google');
-    assert(fbRes.data.token, 'Firebase login should issue session token');
-    console.log('✅ Test 19 Passed: Google OAuth & Firebase Google Sign-In session flows verified');
+    assert.strictEqual(fbUnverifiedRes.status, 401, 'Firebase login without verified ID token must be rejected');
+    console.log('✅ Test 19 Passed: Google OAuth JWT verified & unverified Firebase spoofing rejected');
 
     console.log('\n🎉 ALL 19 AUTOMATED BACKEND TESTS PASSED SUCCESSFULLY! 🚀\n');
   } catch (err) {

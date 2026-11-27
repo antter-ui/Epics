@@ -4,6 +4,42 @@ const url = require('node:url');
 const db = require('./db.js');
 const auth = require('./auth.js');
 
+// Load Firebase Web API key from environment or public/firebase-config.js for server-side ID token verification
+function getFirebaseApiKey() {
+  if (process.env.FIREBASE_API_KEY) return process.env.FIREBASE_API_KEY.trim();
+  try {
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const cfgPath = path.join(__dirname, '..', 'public', 'firebase-config.js');
+    const raw = fs.readFileSync(cfgPath, 'utf8');
+    const match = raw.match(/apiKey\s*:\s*["']([^"']+)["']/);
+    return match ? match[1].trim() : '';
+  } catch (e) {
+    return '';
+  }
+}
+
+async function verifyFirebaseIdToken(idToken) {
+  const apiKey = getFirebaseApiKey();
+  if (!apiKey) {
+    throw new Error('Firebase API key is not configured on the server.');
+  }
+  const resp = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken })
+    }
+  );
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok || !Array.isArray(data.users) || !data.users[0]) {
+    const msg = (data && data.error && data.error.message) || 'Invalid or expired Firebase Google token.';
+    throw new Error(msg);
+  }
+  return data.users[0];
+}
+
 // Helper to send JSON responses
 function sendJson(res, statusCode, data, headers = {}) {
   const json = JSON.stringify(data);
@@ -134,18 +170,25 @@ async function handleApiRequest(req, res) {
       }
     }
 
-    // 4b. Real Firebase Google Sign-In
+    // 4b. Real Verified Firebase Google Sign-In
     if (pathname === '/api/auth/firebase-login' && method === 'POST') {
       const body = await parseBody(req);
       try {
-        if (!body.email) {
-          throw new Error('Email is required from Firebase authentication.');
+        if (!body.idToken || typeof body.idToken !== 'string') {
+          return sendJson(res, 401, {
+            error: 'Verified Firebase ID token is required for Google Sign-In.'
+          });
         }
 
-        const email = body.email.toLowerCase().trim();
-        const name = body.name || email.split('@')[0];
-        const avatar = body.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0284c7`;
-        const googleId = body.uid || `firebase_${email}`;
+        const fbUser = await verifyFirebaseIdToken(body.idToken);
+        if (!fbUser || !fbUser.email) {
+          return sendJson(res, 401, { error: 'Verified Google account email not found in Firebase token.' });
+        }
+
+        const email = fbUser.email.toLowerCase().trim();
+        const name = fbUser.displayName || email.split('@')[0];
+        const avatar = fbUser.photoUrl || '/assets/icons/patient-avatar.svg';
+        const googleId = fbUser.localId || `firebase_${email}`;
 
         const user = db.upsertGoogleUser({ googleId, email, name, avatar });
         const session = db.createSession(user.id);
@@ -160,7 +203,7 @@ async function handleApiRequest(req, res) {
           'Set-Cookie': `mc_session=${session.token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`
         });
       } catch (err) {
-        return sendJson(res, 400, { error: err.message });
+        return sendJson(res, 401, { error: err.message });
       }
     }
 
