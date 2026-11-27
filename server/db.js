@@ -31,6 +31,51 @@ const db = new DatabaseSync(dbPath);
 db.exec('PRAGMA journal_mode = WAL;');
 db.exec('PRAGMA foreign_keys = ON;');
 
+function getSessionSecret() {
+  if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET.trim();
+  try {
+    const cfgPath = path.join(__dirname, '..', 'public', 'firebase-config.js');
+    const raw = fs.readFileSync(cfgPath, 'utf8');
+    const match = raw.match(/apiKey\s*:\s*["']([^"']+)["']/);
+    if (match) {
+      return crypto.createHash('sha256').update(match[1].trim() + '::tp-session-v2').digest('hex');
+    }
+  } catch (e) { /* ignore */ }
+  return crypto.createHash('sha256').update('medicare-connect-fallback-secret-v2').digest('hex');
+}
+
+const SESSION_SECRET = getSessionSecret();
+
+function signSessionToken(payload) {
+  const bodyB64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+  const sig = crypto.createHmac('sha256', SESSION_SECRET).update(bodyB64).digest('base64url');
+  return `mc2.${bodyB64}.${sig}`;
+}
+
+function verifySignedSessionToken(token) {
+  if (!token || typeof token !== 'string' || !token.startsWith('mc2.')) return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const [, bodyB64, sigB64] = parts;
+  if (!bodyB64 || !sigB64) return null;
+
+  const expectedSig = crypto.createHmac('sha256', SESSION_SECRET).update(bodyB64).digest('base64url');
+  const sigBuf = Buffer.from(sigB64, 'utf8');
+  const expBuf = Buffer.from(expectedSig, 'utf8');
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(Buffer.from(bodyB64, 'base64url').toString('utf8'));
+    if (!payload || !payload.email || !payload.uid || typeof payload.exp !== 'number') return null;
+    if (payload.exp <= Date.now()) return null;
+    return payload;
+  } catch (e) {
+    return null;
+  }
+}
+
 function hashPassword(password, salt) {
   return crypto.scryptSync(password, salt, 64).toString('hex');
 }
@@ -70,7 +115,7 @@ const USER_PUBLIC_COLUMNS = 'id, google_id, email, name, avatar, auth_provider, 
 
 function initDatabase() {
   const schemaVersion = db.prepare('PRAGMA user_version').get().user_version;
-  if (schemaVersion >= 2) {
+  if (schemaVersion >= 3) {
     seedInitialData();
     return;
   }
@@ -96,22 +141,22 @@ function initDatabase() {
   `);
 
   // Run column migrations for existing databases
-  try { db.exec('ALTER TABLE users ADD COLUMN password_hash TEXT;'); } catch (e) {}
-  try { db.exec('ALTER TABLE users ADD COLUMN password_salt TEXT;'); } catch (e) {}
-  try { db.exec("ALTER TABLE users ADD COLUMN auth_provider TEXT DEFAULT 'email';"); } catch (e) {}
-  try { db.exec('ALTER TABLE users ADD COLUMN phone TEXT;'); } catch (e) {}
-  try { db.exec('ALTER TABLE users ADD COLUMN emergency_contact TEXT;'); } catch (e) {}
-  try { db.exec('ALTER TABLE users ADD COLUMN allergies TEXT;'); } catch (e) {}
-  try { db.exec('ALTER TABLE users ADD COLUMN updated_at TEXT;'); } catch (e) {}
+  try { db.exec('ALTER TABLE users ADD COLUMN password_hash TEXT;'); } catch (e) { }
+  try { db.exec('ALTER TABLE users ADD COLUMN password_salt TEXT;'); } catch (e) { }
+  try { db.exec("ALTER TABLE users ADD COLUMN auth_provider TEXT DEFAULT 'email';"); } catch (e) { }
+  try { db.exec('ALTER TABLE users ADD COLUMN phone TEXT;'); } catch (e) { }
+  try { db.exec('ALTER TABLE users ADD COLUMN emergency_contact TEXT;'); } catch (e) { }
+  try { db.exec('ALTER TABLE users ADD COLUMN allergies TEXT;'); } catch (e) { }
+  try { db.exec('ALTER TABLE users ADD COLUMN updated_at TEXT;'); } catch (e) { }
   try {
     db.exec(`
       UPDATE users
       SET auth_provider = CASE WHEN google_id IS NOT NULL AND google_id != '' THEN 'google' ELSE 'email' END
       WHERE auth_provider IS NULL OR auth_provider = '';
     `);
-  } catch (e) {}
+  } catch (e) { }
 
-  // 2. Sessions table
+  // 2. Sessions & Revoked Tokens tables
   db.exec(`
     CREATE TABLE IF NOT EXISTS sessions (
       token TEXT PRIMARY KEY,
@@ -119,6 +164,12 @@ function initDatabase() {
       created_at TEXT NOT NULL,
       expires_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS revoked_tokens (
+      token TEXT PRIMARY KEY,
+      revoked_at TEXT NOT NULL
     );
   `);
 
@@ -194,11 +245,11 @@ function initDatabase() {
       ON appointments (user_id, appointment_date, time_slot)
       WHERE status != 'Cancelled';
     `);
-  } catch (e) {}
+  } catch (e) { }
 
   seedInitialData();
   try {
-    db.exec('PRAGMA user_version = 2;');
+    db.exec('PRAGMA user_version = 3;');
   } catch (e) {}
 }
 
@@ -423,11 +474,23 @@ module.exports = {
     return this.getUserById(userId);
   },
 
-  // Sessions
+  // Sessions (DB-backed + HMAC-signed stateless cold-start resilience)
   createSession(userId, durationDays = 7) {
-    const token = 'ses_' + crypto.randomBytes(32).toString('hex');
+    const user = this.getUserById(userId);
     const now = new Date();
     const expiresAt = new Date(now.getTime() + durationDays * 86400000);
+    const token = user
+      ? signSessionToken({
+          uid: user.id,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar || '/assets/icons/patient-avatar.svg',
+          auth_provider: user.auth_provider || 'email',
+          role: user.role || 'patient',
+          jti: crypto.randomBytes(12).toString('hex'),
+          exp: expiresAt.getTime()
+        })
+      : ('ses_' + crypto.randomBytes(32).toString('hex'));
 
     db.prepare(`
       INSERT INTO sessions (token, user_id, created_at, expires_at)
@@ -439,22 +502,68 @@ module.exports = {
 
   getSession(token) {
     if (!token) return null;
-    const session = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token);
-    if (!session) return null;
+    try {
+      const revoked = db.prepare('SELECT 1 FROM revoked_tokens WHERE token = ?').get(token);
+      if (revoked) return null;
+    } catch (e) { /* ignore if pre-init */ }
 
-    if (new Date(session.expires_at) < new Date()) {
-      db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
-      return null;
+    const session = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token);
+    if (session) {
+      if (new Date(session.expires_at) < new Date()) {
+        db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+        return null;
+      }
+      const user = this.getUserById(session.user_id);
+      if (user) return { session, user };
     }
 
-    const user = this.getUserById(session.user_id);
+    // Serverless cold-start recovery for HMAC-signed returning-user tokens
+    const payload = verifySignedSessionToken(token);
+    if (!payload) return null;
+
+    const cleanEmail = String(payload.email).toLowerCase().trim();
+    const nowIso = new Date().toISOString();
+    let user = this.getUserById(payload.uid) || this.getUserByEmail(cleanEmail);
+    if (!user) {
+      try {
+        db.prepare(`
+          INSERT OR IGNORE INTO users (id, email, name, avatar, auth_provider, role, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          payload.uid,
+          cleanEmail,
+          payload.name || cleanEmail.split('@')[0],
+          payload.avatar || '/assets/icons/patient-avatar.svg',
+          payload.auth_provider || 'email',
+          payload.role || 'patient',
+          nowIso,
+          nowIso
+        );
+      } catch (e) { /* ignore duplicate constraint */ }
+      user = this.getUserById(payload.uid) || this.getUserByEmail(cleanEmail);
+    }
     if (!user) return null;
 
-    return { session, user };
+    const expiresIso = new Date(payload.exp).toISOString();
+    try {
+      db.prepare(`
+        INSERT OR IGNORE INTO sessions (token, user_id, created_at, expires_at)
+        VALUES (?, ?, ?, ?)
+      `).run(token, user.id, nowIso, expiresIso);
+    } catch (e) { /* ignore */ }
+
+    return {
+      session: { token, user_id: user.id, created_at: nowIso, expires_at: expiresIso },
+      user
+    };
   },
 
   deleteSession(token) {
+    if (!token) return;
     db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+    try {
+      db.prepare('INSERT OR IGNORE INTO revoked_tokens (token, revoked_at) VALUES (?, ?)').run(token, new Date().toISOString());
+    } catch (e) { /* ignore */ }
   },
 
   // Departments

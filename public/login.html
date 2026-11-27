@@ -10,6 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://epics-10c47.firebaseapp.com" crossorigin />
+  <link rel="preconnect" href="https://accounts.google.com" crossorigin />
   <link rel="stylesheet" href="/design-system/tokens.css" />
   <link rel="stylesheet" href="/design-system/components.css" />
   <link rel="stylesheet" href="/css/site.css" />
@@ -751,8 +753,15 @@
 
       // Show "Jump back in!" immediately when a previously signed-in user returns
       const savedAccounts = window.PortalCore.getRememberedAccounts();
+      const manualLogout = sessionStorage.getItem('tp_manual_logout') === '1';
       if (!forceOtherAccount && savedAccounts.length > 0) {
         showReturningUserView(prefilledEmail, isQuickEmailFlow);
+        if (!manualLogout && savedAccounts.some(a => a.provider === 'google')) {
+          setJumpbackVerifying(true, 'Verifying your Google session in background...');
+          window.PortalCore.trySilentBackgroundRestore({ redirectTo }).then(restored => {
+            if (!restored) setJumpbackVerifying(false);
+          });
+        }
       } else if (prefilledEmail) {
         const emailField = document.getElementById('loginEmail');
         if (emailField) emailField.value = prefilledEmail;

@@ -128,6 +128,7 @@
     try {
       if (user) {
         sessionStorage.setItem('mc_user_cache', JSON.stringify(user));
+        sessionStorage.removeItem('tp_manual_logout');
         rememberAccount(user, providerOverride);
       } else {
         sessionStorage.removeItem('mc_user_cache');
@@ -147,7 +148,10 @@
   }
 
   async function requireAuth(redirectTo = '/login.html') {
-    const user = await getCurrentUser();
+    let user = await getCurrentUser();
+    if (!user && sessionStorage.getItem('tp_manual_logout') !== '1') {
+      user = await trySilentBackgroundRestore();
+    }
     if (!user) {
       const next = encodeURIComponent(window.location.pathname + window.location.search);
       window.location.href = `${redirectTo}?redirect=${next}`;
@@ -158,6 +162,7 @@
 
   async function logout() {
     setCachedUser(null);
+    sessionStorage.setItem('tp_manual_logout', '1');
     localStorage.removeItem('mc_token');
     try {
       await apiRequest('/api/auth/logout', { method: 'POST' });
@@ -166,6 +171,7 @@
   }
 
   let sharedFirebaseLoadPromise = null;
+  let silentRestorePromise = null;
 
   function loadScriptOnce(src) {
     return new Promise((resolve, reject) => {
@@ -210,6 +216,23 @@
     return sharedFirebaseLoadPromise;
   }
 
+  async function waitForFirebaseUser(authInstance, timeoutMs = 2500) {
+    if (!authInstance) return null;
+    if (authInstance.currentUser) return authInstance.currentUser;
+    return new Promise(resolve => {
+      let settled = false;
+      const done = u => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (typeof unsub === 'function') unsub();
+        resolve(u || null);
+      };
+      const timer = setTimeout(() => done(authInstance.currentUser), timeoutMs);
+      const unsub = authInstance.onAuthStateChanged(u => done(u));
+    });
+  }
+
   async function exchangeFirebaseUser(fbUser) {
     const idToken = await fbUser.getIdToken();
     const data = await apiRequest('/api/auth/firebase-login', {
@@ -219,6 +242,37 @@
     if (data.token) localStorage.setItem('mc_token', data.token);
     if (data.user) setCachedUser(data.user, 'google');
     return data.user || null;
+  }
+
+  async function trySilentBackgroundRestore({ expectedEmail = '', redirectTo = '' } = {}) {
+    if (sessionStorage.getItem('tp_manual_logout') === '1') return null;
+    const accounts = getRememberedAccounts();
+    const googleAccounts = accounts.filter(a => a.provider === 'google');
+    if (!googleAccounts.length && !expectedEmail) return null;
+
+    if (!silentRestorePromise) {
+      silentRestorePromise = (async () => {
+        try {
+          const ready = await ensureFirebaseReady();
+          if (!ready || !global.firebase || typeof global.firebase.auth !== 'function') return null;
+          const fbUser = await waitForFirebaseUser(global.firebase.auth(), 2500);
+          if (!fbUser || !fbUser.email) return null;
+          const fbEmail = fbUser.email.toLowerCase();
+          const targetEmail = (expectedEmail || '').trim().toLowerCase();
+          if (targetEmail && fbEmail !== targetEmail) return null;
+          const user = await exchangeFirebaseUser(fbUser);
+          if (user && redirectTo) {
+            window.location.href = redirectTo;
+          }
+          return user;
+        } catch (e) {
+          return null;
+        } finally {
+          silentRestorePromise = null;
+        }
+      })();
+    }
+    return silentRestorePromise;
   }
 
   async function signInWithGoogleHint(emailHint = '', { redirectTo = '', forceChooser = false, onVerifying = null } = {}) {
@@ -231,25 +285,22 @@
     const authInstance = global.firebase.auth();
     const targetEmail = String(emailHint || '').trim().toLowerCase();
 
-    // Instant returning-user path: reuse cached Firebase Google user session when it matches the clicked account
-    if (targetEmail && !forceChooser) {
-      const currentFbUser = await new Promise(resolve => {
-        if (authInstance.currentUser) return resolve(authInstance.currentUser);
-        const timer = setTimeout(() => resolve(authInstance.currentUser), 450);
-        const unsub = authInstance.onAuthStateChanged(u => {
-          clearTimeout(timer);
-          unsub();
-          resolve(u);
-        });
-      });
-
-      if (currentFbUser && currentFbUser.email && currentFbUser.email.toLowerCase() === targetEmail) {
-        try {
-          const user = await exchangeFirebaseUser(currentFbUser);
-          if (redirectTo) window.location.href = redirectTo;
-          return user;
-        } catch (silentErr) {
-          // Fall through cleanly to interactive popup if cached token expired/revoked
+    // Returning-user silent background verification: reuse cached Firebase Google user without opening any popup window
+    if (!forceChooser) {
+      const currentFbUser = await waitForFirebaseUser(authInstance, 2500);
+      if (currentFbUser && currentFbUser.email) {
+        const fbEmail = currentFbUser.email.toLowerCase();
+        const matchesSavedGoogle = targetEmail
+          ? fbEmail === targetEmail
+          : getRememberedAccounts().some(a => a.provider === 'google' && a.email === fbEmail);
+        if (matchesSavedGoogle) {
+          try {
+            const user = await exchangeFirebaseUser(currentFbUser);
+            if (redirectTo) window.location.href = redirectTo;
+            return user;
+          } catch (silentErr) {
+            // Fall through cleanly only if cached Firebase session was revoked
+          }
         }
       }
     }
@@ -533,7 +584,10 @@
 
     // Public pages: refresh auth pill asynchronously without blocking page data or render
     if (localStorage.getItem('mc_token') || cachedUser) {
-      getCurrentUser().then(freshUser => {
+      getCurrentUser().then(async freshUser => {
+        if (!freshUser && sessionStorage.getItem('tp_manual_logout') !== '1') {
+          freshUser = await trySilentBackgroundRestore();
+        }
         if (Boolean(freshUser) !== Boolean(cachedUser) || (freshUser && cachedUser && freshUser.name !== cachedUser.name)) {
           const slot = document.getElementById('tpHeaderAuthSlot');
           if (slot) {
@@ -543,6 +597,17 @@
           }
         }
         if (!freshUser) {
+          mountReturningPrompt({ activePath });
+        }
+      });
+    } else if (sessionStorage.getItem('tp_manual_logout') !== '1' && getRememberedAccounts().some(a => a.provider === 'google')) {
+      trySilentBackgroundRestore().then(restored => {
+        if (restored) {
+          const slot = document.getElementById('tpHeaderAuthSlot');
+          if (slot) {
+            slot.innerHTML = `<a href="/dashboard.html" class="tp-btn tp-btn--outline tp-btn--sm" style="padding:8px 16px;">${esc(restored.name.split(' ')[0])} &middot; Portal</a>`;
+          }
+        } else {
           mountReturningPrompt({ activePath });
         }
       });
@@ -590,6 +655,7 @@
     requireAuth,
     logout,
     ensureFirebaseReady,
+    trySilentBackgroundRestore,
     signInWithGoogleHint,
     renderAvatarHtml,
     mountReturningPrompt,
