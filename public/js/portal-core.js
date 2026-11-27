@@ -51,9 +51,18 @@
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const res = await fetch(endpoint, { ...options, headers });
-    const data = await res.json().catch(() => ({}));
+    const rawText = await res.text();
+    let data = {};
+    try {
+      data = rawText ? JSON.parse(rawText) : {};
+    } catch (e) {
+      data = {};
+    }
     if (!res.ok) {
-      throw new Error(data.error || `Request failed (${res.status})`);
+      const fallbackMsg = res.status === 404 && !data.error
+        ? `API endpoint not found (404) at ${window.location.origin}${endpoint}. Make sure you are accessing the app through the running Node server URL (not VS Code Live Server or a static preview).`
+        : `Request failed (${res.status})`;
+      throw new Error(data.error || fallbackMsg);
     }
     return data;
   }

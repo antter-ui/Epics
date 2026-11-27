@@ -76,7 +76,7 @@ function parseBody(req) {
 // Router dispatcher
 async function handleApiRequest(req, res) {
   const parsedUrl = url.parse(req.url, true);
-  const pathname = parsedUrl.pathname;
+  const pathname = parsedUrl.pathname.replace(/\/+$/, '') || '/';
   const method = req.method.toUpperCase();
   const query = parsedUrl.query;
 
