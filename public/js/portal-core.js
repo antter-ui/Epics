@@ -67,11 +67,29 @@
     return data;
   }
 
+  function getCachedUser() {
+    try {
+      const raw = sessionStorage.getItem('mc_user_cache');
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setCachedUser(user) {
+    try {
+      if (user) sessionStorage.setItem('mc_user_cache', JSON.stringify(user));
+      else sessionStorage.removeItem('mc_user_cache');
+    } catch (e) { /* ignore */ }
+  }
+
   async function getCurrentUser() {
     try {
       const data = await apiRequest('/api/auth/me');
+      setCachedUser(data.user || null);
       return data.user || null;
     } catch (e) {
+      setCachedUser(null);
       return null;
     }
   }
@@ -87,12 +105,12 @@
   }
 
   async function logout() {
+    setCachedUser(null);
+    localStorage.removeItem('mc_token');
     try {
       await apiRequest('/api/auth/logout', { method: 'POST' });
     } catch (e) { /* ignore */ }
-    localStorage.removeItem('mc_token');
-    showToast('Signed out securely.', 'success');
-    setTimeout(() => { window.location.href = '/login.html'; }, 600);
+    window.location.href = '/login.html';
   }
 
   function enrichDepartment(dept) {
@@ -168,20 +186,24 @@
     setTimeout(() => w.print(), 250);
   }
 
-  /** Initialize header/footer + scroll-reveal on any page. */
+  /** Initialize header/footer immediately from cache + scroll-reveal, then verify auth cleanly. */
   async function mountLayout({ activePath, overlay = false, requireUser = false } = {}) {
-    const user = requireUser ? await requireAuth() : await getCurrentUser();
-    if (requireUser && !user) return null;
-
     const headerMount = document.getElementById('siteHeader');
     const footerMount = document.getElementById('siteFooter');
-    if (headerMount && global.PractitionerUI) {
-      headerMount.innerHTML = global.PractitionerUI.renderHeader({ activePath, overlay, user });
-      global.PractitionerUI.initInteractions();
+    const cachedUser = getCachedUser();
+
+    function paintHeaderFooter(u) {
+      if (headerMount && global.PractitionerUI) {
+        headerMount.innerHTML = global.PractitionerUI.renderHeader({ activePath, overlay, user: u });
+        global.PractitionerUI.initInteractions();
+      }
+      if (footerMount && global.PractitionerUI) {
+        footerMount.innerHTML = global.PractitionerUI.renderFooter();
+      }
     }
-    if (footerMount && global.PractitionerUI) {
-      footerMount.innerHTML = global.PractitionerUI.renderFooter();
-    }
+
+    // Immediate non-blocking first paint for Header & Footer
+    paintHeaderFooter(cachedUser);
 
     // Subtle scroll reveal on desktop/tablet
     if (window.matchMedia('(min-width: 768px)').matches && 'IntersectionObserver' in window) {
@@ -198,7 +220,30 @@
       document.querySelectorAll('.tp-reveal').forEach(el => el.classList.add('is-visible'));
     }
 
-    return user;
+    if (requireUser) {
+      const verifiedUser = await requireAuth();
+      if (!verifiedUser) return null;
+      if (!cachedUser || cachedUser.id !== verifiedUser.id || cachedUser.name !== verifiedUser.name) {
+        paintHeaderFooter(verifiedUser);
+      }
+      return verifiedUser;
+    }
+
+    // Public pages: refresh auth pill asynchronously without blocking page data or render
+    if (localStorage.getItem('mc_token') || cachedUser) {
+      getCurrentUser().then(freshUser => {
+        if (Boolean(freshUser) !== Boolean(cachedUser) || (freshUser && cachedUser && freshUser.name !== cachedUser.name)) {
+          const slot = document.getElementById('tpHeaderAuthSlot');
+          if (slot) {
+            slot.innerHTML = freshUser
+              ? `<a href="/dashboard.html" class="tp-btn tp-btn--outline tp-btn--sm" style="padding:8px 16px;">${esc(freshUser.name.split(' ')[0])} &middot; Portal</a>`
+              : `<a href="/login.html" class="tp-btn tp-btn--outline tp-btn--sm" style="padding:8px 16px;">Patient Login</a>`;
+          }
+        }
+      });
+    }
+
+    return cachedUser;
   }
 
   /** Render authenticated portal sub-navigation bar. */
@@ -229,6 +274,8 @@
     formatDate,
     showToast,
     apiRequest,
+    getCachedUser,
+    setCachedUser,
     getCurrentUser,
     requireAuth,
     logout,

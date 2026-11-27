@@ -4,7 +4,7 @@
    Extracted from post-43c1f9.css, post-4668ca1.css, post-364c1f9.css
    ========================================================================== */
 
-@import url('/assets/fonts/fonts.css');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Radley:ital@0;1&display=swap');
 
 :root {
   /* ------------------------------------------------------------------------

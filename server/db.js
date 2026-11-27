@@ -69,6 +69,12 @@ function isSlotElapsedToday(timeSlot, now = new Date()) {
 const USER_PUBLIC_COLUMNS = 'id, google_id, email, name, avatar, auth_provider, phone, emergency_contact, allergies, role, created_at, updated_at';
 
 function initDatabase() {
+  const schemaVersion = db.prepare('PRAGMA user_version').get().user_version;
+  if (schemaVersion >= 2) {
+    seedInitialData();
+    return;
+  }
+
   // 1. Users table (Supports real email/password authentication & Google OAuth)
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -191,6 +197,9 @@ function initDatabase() {
   } catch (e) {}
 
   seedInitialData();
+  try {
+    db.exec('PRAGMA user_version = 2;');
+  } catch (e) {}
 }
 
 const ALL_TIME_SLOTS = [

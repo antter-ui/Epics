@@ -29,7 +29,8 @@ async function verifyFirebaseIdToken(idToken) {
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken })
+      body: JSON.stringify({ idToken }),
+      signal: AbortSignal.timeout(8000)
     }
   );
   const data = await resp.json().catch(() => ({}));
@@ -267,17 +268,21 @@ async function handleApiRequest(req, res) {
       });
     }
 
-    // 7. Get Departments
+    // 7. Get Departments (Cacheable clinic directory)
     if (pathname === '/api/departments' && method === 'GET') {
       const departments = db.getDepartments();
-      return sendJson(res, 200, { departments });
+      return sendJson(res, 200, { departments }, {
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=600'
+      });
     }
 
-    // 8. Get Doctors
+    // 8. Get Doctors (Cacheable specialist directory)
     if (pathname === '/api/doctors' && method === 'GET') {
       const deptId = query.departmentId ? parseInt(query.departmentId, 10) : null;
       const doctors = db.getDoctors(deptId);
-      return sendJson(res, 200, { doctors });
+      return sendJson(res, 200, { doctors }, {
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=600'
+      });
     }
 
     // 9. Get Single Doctor
@@ -288,7 +293,9 @@ async function handleApiRequest(req, res) {
       if (!doctor) {
         return sendJson(res, 404, { error: 'Doctor not found' });
       }
-      return sendJson(res, 200, { doctor });
+      return sendJson(res, 200, { doctor }, {
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=600'
+      });
     }
 
     // 10. Check Slot Availability

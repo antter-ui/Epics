@@ -6,12 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Patient Sign In – The Practitioner Medical Clinic</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
   <link rel="stylesheet" href="/design-system/tokens.css" />
   <link rel="stylesheet" href="/design-system/components.css" />
   <link rel="stylesheet" href="/css/site.css" />
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="/firebase-config.js"></script>
+  <script src="/firebase-config.js" defer></script>
   <style>
     .tp-auth-wrap {
       min-height: calc(100vh - 140px);
@@ -204,6 +206,25 @@
   <script>
     const redirectTarget = new URLSearchParams(window.location.search).get('redirect') || '/dashboard.html';
     let firebaseReady = false;
+    let firebaseLoadPromise = null;
+
+    function loadExternalScript(src) {
+      return new Promise((resolve, reject) => {
+        const existing = document.querySelector(`script[src="${src}"]`);
+        if (existing) {
+          if (existing.dataset.loaded === '1') return resolve();
+          existing.addEventListener('load', resolve, { once: true });
+          existing.addEventListener('error', reject, { once: true });
+          return;
+        }
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        s.addEventListener('load', () => { s.dataset.loaded = '1'; resolve(); }, { once: true });
+        s.addEventListener('error', reject, { once: true });
+        document.head.appendChild(s);
+      });
+    }
 
     function initFirebase() {
       if (window.firebase && window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY') {
@@ -212,6 +233,22 @@
           firebaseReady = true;
         } catch (e) { /* ignore */ }
       }
+      return firebaseReady;
+    }
+
+    async function ensureFirebaseLoaded() {
+      if (initFirebase()) return true;
+      if (!firebaseLoadPromise) {
+        firebaseLoadPromise = (async () => {
+          await loadExternalScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+          await loadExternalScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
+          return initFirebase();
+        })().catch(err => {
+          firebaseLoadPromise = null;
+          throw err;
+        });
+      }
+      return firebaseLoadPromise;
     }
 
     function switchAuthView(mode) {
@@ -237,12 +274,11 @@
           body: JSON.stringify({ email, password })
         });
         if (data.token) localStorage.setItem('mc_token', data.token);
-        window.PortalCore.showToast(`Welcome back, ${data.user.name}!`, 'success');
-        setTimeout(() => { window.location.href = redirectTarget; }, 600);
+        if (data.user) window.PortalCore.setCachedUser(data.user);
+        window.location.href = redirectTarget;
       } catch (err) {
         errBox.textContent = err.message;
         errBox.style.display = 'block';
-      } finally {
         btn.disabled = false;
         btn.textContent = 'Sign In';
       }
@@ -263,12 +299,11 @@
           body: JSON.stringify({ name, email, password })
         });
         if (data.token) localStorage.setItem('mc_token', data.token);
-        window.PortalCore.showToast(`Account created for ${data.user.name}!`, 'success');
-        setTimeout(() => { window.location.href = redirectTarget; }, 600);
+        if (data.user) window.PortalCore.setCachedUser(data.user);
+        window.location.href = redirectTarget;
       } catch (err) {
         errBox.textContent = err.message;
         errBox.style.display = 'block';
-      } finally {
         btn.disabled = false;
         btn.textContent = 'Create Patient Account';
       }
@@ -294,8 +329,8 @@
         body: JSON.stringify({ idToken })
       });
       if (data.token) localStorage.setItem('mc_token', data.token);
-      window.PortalCore.showToast(`Welcome, ${data.user.name}!`, 'success');
-      setTimeout(() => { window.location.href = redirectTarget; }, 500);
+      if (data.user) window.PortalCore.setCachedUser(data.user);
+      window.location.href = redirectTarget;
     }
 
     function formatFirebaseAuthError(err) {
@@ -317,17 +352,26 @@
 
     async function handleGoogleSignIn() {
       hideGoogleError();
-      if (!firebaseReady) initFirebase();
-
-      if (!firebaseReady || !window.firebase || typeof firebase.auth !== 'function') {
-        showGoogleError('Google Sign-In SDK could not load from gstatic.com. Check your internet connection or disable tracker/script blockers, or sign in with Email & Password.');
-        return;
-      }
-
       const btn = document.getElementById('btnGoogleSignIn');
       const label = document.getElementById('btnGoogleLabel');
       btn.disabled = true;
       label.textContent = 'Connecting to Google...';
+
+      try {
+        await ensureFirebaseLoaded();
+      } catch (sdkErr) {
+        btn.disabled = false;
+        label.textContent = 'Continue with Google';
+        showGoogleError('Google Sign-In SDK could not load from gstatic.com. Check your internet connection or disable tracker/script blockers, or sign in with Email & Password.');
+        return;
+      }
+
+      if (!firebaseReady || !window.firebase || typeof firebase.auth !== 'function') {
+        btn.disabled = false;
+        label.textContent = 'Continue with Google';
+        showGoogleError('Google Sign-In configuration is unavailable.');
+        return;
+      }
 
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
@@ -335,6 +379,7 @@
       try {
         const result = await firebase.auth().signInWithPopup(provider);
         if (result && result.user) {
+          label.textContent = 'Completing Sign-In...';
           await completeFirebaseLogin(result.user);
           return;
         }
@@ -348,9 +393,11 @@
         if (err && redirectFallbackCodes.includes(err.code)) {
           try {
             label.textContent = 'Redirecting to Google...';
+            sessionStorage.setItem('tp_fb_redirect_pending', '1');
             await firebase.auth().signInWithRedirect(provider);
             return;
           } catch (redirErr) {
+            sessionStorage.removeItem('tp_fb_redirect_pending');
             console.error('[GoogleAuth] Redirect sign-in error:', redirErr);
             showGoogleError(formatFirebaseAuthError(redirErr));
           }
@@ -364,11 +411,21 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
-      initFirebase();
+      // Paint header/footer instantaneously without blocking on auth/Firebase
+      window.PortalCore.mountLayout({ activePath: '/login.html' });
 
-      // Complete pending Google OAuth redirect sign-in if returning from accounts.google.com
-      if (firebaseReady && window.firebase && typeof firebase.auth === 'function') {
+      // Redirect immediately if returning from an active session
+      if (localStorage.getItem('mc_token')) {
+        window.PortalCore.getCurrentUser().then(u => {
+          if (u) window.location.href = redirectTarget;
+        });
+      }
+
+      // Only pay getRedirectResult() roundtrip when a redirect OAuth flow was started
+      if (sessionStorage.getItem('tp_fb_redirect_pending') === '1') {
+        sessionStorage.removeItem('tp_fb_redirect_pending');
         try {
+          await ensureFirebaseLoaded();
           const redirResult = await firebase.auth().getRedirectResult();
           if (redirResult && redirResult.user) {
             await completeFirebaseLogin(redirResult.user);
@@ -378,11 +435,13 @@
           console.error('[GoogleAuth] Redirect result error:', err);
           showGoogleError(formatFirebaseAuthError(err));
         }
-      }
-
-      const user = await window.PortalCore.mountLayout({ activePath: '/login.html' });
-      if (user) {
-        window.location.href = redirectTarget;
+      } else {
+        // Warm Firebase SDK gently after initial UI paint (or on hover/focus of the button)
+        const gBtn = document.getElementById('btnGoogleSignIn');
+        if (gBtn) {
+          gBtn.addEventListener('pointerenter', () => ensureFirebaseLoaded().catch(() => {}), { once: true });
+        }
+        setTimeout(() => ensureFirebaseLoaded().catch(() => {}), 350);
       }
     });
   </script>
